@@ -1,6 +1,17 @@
 'use client';
 
 import React from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useDashboardStore } from '../../store/dashboardStore';
 import {
   useCreateWorkspace,
@@ -10,9 +21,8 @@ import {
   useEndpoints,
   usePayloads,
 } from '../../services/webhook';
-import { Button } from '../ui/button';
-import { Card } from '../ui/card';
 import { useToast } from '../../hooks/use-toast';
+import { Dialog } from '../ui/dialog';
 import { DiffViewer } from '../webhooks/diff-viewer';
 
 export function DashboardModals() {
@@ -267,322 +277,492 @@ export function DashboardModals() {
   return (
     <>
       {/* CREATE WORKSPACE MODAL */}
-      {showWorkspaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
-          <Card className="max-w-md w-full p-6 border-zinc-200 dark:border-zinc-800 space-y-4">
-            <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Create New Workspace</h3>
-            <form onSubmit={handleCreateWorkspace} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Workspace Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Acme Corp Dev"
-                  value={newWorkspaceName}
-                  onChange={(e) => setNewWorkspaceName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                />
-              </div>
+      <Dialog
+        isOpen={showWorkspaceModal}
+        onClose={() => {
+          setShowWorkspaceModal(false);
+          setNewWorkspaceName('');
+        }}
+        title="Create New Workspace"
+      >
+        <form onSubmit={handleCreateWorkspace} className="space-y-4 pt-2">
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Workspace Name
+            </Typography>
+            <TextField
+              required
+              placeholder="e.g. Acme Corp Dev"
+              value={newWorkspaceName}
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
 
-              <div className="flex justify-end gap-2 pt-3">
-                <Button
-                  onClick={() => {
-                    setShowWorkspaceModal(false);
-                    setNewWorkspaceName('');
-                  }}
-                  variant="outline"
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={createWorkspaceMutation.isPending}>
-                  Create
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+          <Box className="flex justify-end gap-2 pt-3">
+            <Button
+              onClick={() => {
+                setShowWorkspaceModal(false);
+                setNewWorkspaceName('');
+              }}
+              variant="outlined"
+              size="small"
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+              sx={{ color: 'inherit' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              disabled={createWorkspaceMutation.isPending}
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+            >
+              {createWorkspaceMutation.isPending ? <CircularProgress size={16} color="inherit" /> : 'Create'}
+            </Button>
+          </Box>
+        </form>
+      </Dialog>
 
       {/* CREATE ENDPOINT MODAL */}
-      {showEndpointModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
-          <Card className="max-w-md w-full p-6 border-zinc-200 dark:border-zinc-800 space-y-4">
-            <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Register Webhook Endpoint</h3>
-            <form onSubmit={handleCreateEndpoint} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Endpoint Friendly Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="My Stripe listener"
-                  value={newEndpointName}
-                  onChange={(e) => setNewEndpointName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                />
-              </div>
+      <Dialog
+        isOpen={showEndpointModal}
+        onClose={() => setShowEndpointModal(false)}
+        title="Register Webhook Endpoint"
+      >
+        <form onSubmit={handleCreateEndpoint} className="space-y-4 pt-2">
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Endpoint Friendly Name
+            </Typography>
+            <TextField
+              required
+              placeholder="My Stripe listener"
+              value={newEndpointName}
+              onChange={(e) => setNewEndpointName(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Slug / Custom Path</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="stripe-checkout"
-                  value={newEndpointSlug}
-                  onChange={(e) => setNewEndpointSlug(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                />
-              </div>
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Slug / Custom Path
+            </Typography>
+            <TextField
+              required
+              placeholder="stripe-checkout"
+              value={newEndpointSlug}
+              onChange={(e) => setNewEndpointSlug(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 font-sans">Endpoint Type</label>
-                <div className="flex gap-4">
-                  <label className="text-xs flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={newEndpointType === 'persistent'}
-                      onChange={() => setNewEndpointType('persistent')}
-                    />{' '}
-                    Persistent slug
-                  </label>
-                  <label className="text-xs flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={newEndpointType === 'temporary'}
-                      onChange={() => setNewEndpointType('temporary')}
-                    />{' '}
-                    Temporary (24hr expiry)
-                  </label>
-                </div>
-              </div>
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Endpoint Type
+            </Typography>
+            <RadioGroup
+              row
+              value={newEndpointType}
+              onChange={(e) => setNewEndpointType(e.target.value as any)}
+            >
+              <FormControlLabel
+                value="persistent"
+                control={<Radio size="small" />}
+                label={<Typography variant="caption" style={{ fontFamily: 'inherit' }}>Persistent slug</Typography>}
+              />
+              <FormControlLabel
+                value="temporary"
+                control={<Radio size="small" />}
+                label={<Typography variant="caption" style={{ fontFamily: 'inherit' }}>Temporary (24hr expiry)</Typography>}
+              />
+            </RadioGroup>
+          </Box>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">HMAC Validation Secret (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="secret-hmac-key"
-                  value={newEndpointSecret}
-                  onChange={(e) => setNewEndpointSecret(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                />
-              </div>
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              HMAC Validation Secret (Optional)
+            </Typography>
+            <TextField
+              placeholder="secret-hmac-key"
+              value={newEndpointSecret}
+              onChange={(e) => setNewEndpointSecret(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
 
-              <div className="flex justify-end gap-2 pt-3">
-                <Button onClick={() => setShowEndpointModal(false)} variant="outline" type="button">
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={createEndpointMutation.isPending}>
-                  Register
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+          <Box className="flex justify-end gap-2 pt-3">
+            <Button
+              onClick={() => setShowEndpointModal(false)}
+              variant="outlined"
+              size="small"
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+              sx={{ color: 'inherit' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              disabled={createEndpointMutation.isPending}
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+            >
+              {createEndpointMutation.isPending ? <CircularProgress size={16} color="inherit" /> : 'Register'}
+            </Button>
+          </Box>
+        </form>
+      </Dialog>
 
       {/* ADD DESTINATION MODAL */}
-      {showDestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
-          <Card className="max-w-lg w-full p-6 border-zinc-200 dark:border-zinc-800 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Add Forwarding Target</h3>
-            <form onSubmit={handleCreateDestination} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Friendly Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Local Rails backend"
-                  value={destName}
-                  onChange={(e) => setDestName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+      <Dialog
+        isOpen={showDestModal}
+        onClose={() => setShowDestModal(false)}
+        title="Add Forwarding Target"
+      >
+        <form onSubmit={handleCreateDestination} className="space-y-4 pt-2">
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Friendly Name
+            </Typography>
+            <TextField
+              required
+              placeholder="Local Rails backend"
+              value={destName}
+              onChange={(e) => setDestName(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
+
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Target Forward URL
+            </Typography>
+            <TextField
+              type="url"
+              required
+              placeholder="http://localhost:3000/webhooks"
+              value={destUrl}
+              onChange={(e) => setDestUrl(e.target.value)}
+              fullWidth
+              size="small"
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px' }
+                }
+              }}
+            />
+          </Box>
+
+          <Box className="grid grid-cols-2 gap-3">
+            <Box className="flex flex-col gap-1 w-full">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                HTTP Method
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select
+                  value={destMethod}
+                  onChange={(e) => setDestMethod(e.target.value as string)}
+                  style={{ fontSize: '12px', borderRadius: '12px' }}
+                >
+                  <MenuItem value="POST" style={{ fontSize: '12px' }}>POST</MenuItem>
+                  <MenuItem value="PUT" style={{ fontSize: '12px' }}>PUT</MenuItem>
+                  <MenuItem value="PATCH" style={{ fontSize: '12px' }}>PATCH</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box className="flex flex-col gap-1 w-full">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                Authentication Inject
+              </Typography>
+              <FormControl size="small" fullWidth>
+                <Select
+                  value={destAuthType}
+                  onChange={(e) => setDestAuthType(e.target.value as string)}
+                  style={{ fontSize: '12px', borderRadius: '12px' }}
+                >
+                  <MenuItem value="None" style={{ fontSize: '12px' }}>None</MenuItem>
+                  <MenuItem value="Bearer" style={{ fontSize: '12px' }}>Bearer Token</MenuItem>
+                  <MenuItem value="Basic" style={{ fontSize: '12px' }}>Basic Auth</MenuItem>
+                  <MenuItem value="CustomSignature" style={{ fontSize: '12px' }}>Custom Signature HMAC</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+
+          {/* Conditional Auth Inputs */}
+          {destAuthType === 'Bearer' && (
+            <Box className="flex flex-col gap-1 w-full">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                Bearer Token
+              </Typography>
+              <TextField
+                type="password"
+                placeholder="eyJhbGciOi..."
+                value={destToken}
+                onChange={(e) => setDestToken(e.target.value)}
+                fullWidth
+                size="small"
+                slotProps={{
+                  input: {
+                    style: { borderRadius: '12px', fontSize: '12px' }
+                  }
+                }}
+              />
+            </Box>
+          )}
+
+          {destAuthType === 'Basic' && (
+            <Box className="grid grid-cols-2 gap-3">
+              <Box className="flex flex-col gap-1 w-full">
+                <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                  Username
+                </Typography>
+                <TextField
+                  placeholder="admin"
+                  value={destUser}
+                  onChange={(e) => setDestUser(e.target.value)}
+                  fullWidth
+                  size="small"
+                  slotProps={{
+                    input: {
+                      style: { borderRadius: '12px', fontSize: '12px' }
+                    }
+                  }}
                 />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Target Forward URL</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="http://localhost:3000/webhooks"
-                  value={destUrl}
-                  onChange={(e) => setDestUrl(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              </Box>
+              <Box className="flex flex-col gap-1 w-full">
+                <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                  Password
+                </Typography>
+                <TextField
+                  type="password"
+                  placeholder="password"
+                  value={destPass}
+                  onChange={(e) => setDestPass(e.target.value)}
+                  fullWidth
+                  size="small"
+                  slotProps={{
+                    input: {
+                      style: { borderRadius: '12px', fontSize: '12px' }
+                    }
+                  }}
                 />
-              </div>
+              </Box>
+            </Box>
+          )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500">HTTP Method</label>
-                  <select
-                    value={destMethod}
-                    onChange={(e) => setDestMethod(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                  >
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="PATCH">PATCH</option>
-                  </select>
-                </div>
+          {destAuthType === 'CustomSignature' && (
+            <Box className="flex flex-col gap-1 w-full">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                HMAC Signature Secret Key
+              </Typography>
+              <TextField
+                type="password"
+                placeholder="my-signing-secret"
+                value={destSignatureSecret}
+                onChange={(e) => setDestSignatureSecret(e.target.value)}
+                fullWidth
+                size="small"
+                slotProps={{
+                  input: {
+                    style: { borderRadius: '12px', fontSize: '12px' }
+                  }
+                }}
+              />
+            </Box>
+          )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500">Authentication Inject</label>
-                  <select
-                    value={destAuthType}
-                    onChange={(e) => setDestAuthType(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                  >
-                    <option value="None">None</option>
-                    <option value="Bearer">Bearer Token</option>
-                    <option value="Basic">Basic Auth</option>
-                    <option value="CustomSignature">Custom Signature HMAC</option>
-                  </select>
-                </div>
-              </div>
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Inject Headers (JSON Object)
+            </Typography>
+            <TextField
+              placeholder='{"X-My-Header": "value"}'
+              value={destHeadersInject}
+              onChange={(e) => setDestHeadersInject(e.target.value)}
+              fullWidth
+              size="small"
+              multiline
+              rows={2}
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace' }
+                }
+              }}
+            />
+          </Box>
 
-              {/* Conditional Auth Inputs */}
-              {destAuthType === 'Bearer' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500">Bearer Token</label>
-                  <input
-                    type="password"
-                    placeholder="eyJhbGciOi..."
-                    value={destToken}
-                    onChange={(e) => setDestToken(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                  />
-                </div>
-              )}
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Strip Headers (JSON Array)
+            </Typography>
+            <TextField
+              placeholder='["Authorization", "User-Agent"]'
+              value={destHeadersStrip}
+              onChange={(e) => setDestHeadersStrip(e.target.value)}
+              fullWidth
+              size="small"
+              multiline
+              rows={2}
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace' }
+                }
+              }}
+            />
+          </Box>
 
-              {destAuthType === 'Basic' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-zinc-500">Username</label>
-                    <input
-                      type="text"
-                      placeholder="admin"
-                      value={destUser}
-                      onChange={(e) => setDestUser(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-zinc-500">Password</label>
-                    <input
-                      type="password"
-                      placeholder="password"
-                      value={destPass}
-                      onChange={(e) => setDestPass(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                    />
-                  </div>
-                </div>
-              )}
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Payload Transformation Template (e.g. Map keys)
+            </Typography>
+            <TextField
+              placeholder='{"id": "{{user.id}}", "msg": "Event triggered"}'
+              value={destTransformTemplate}
+              onChange={(e) => setDestTransformTemplate(e.target.value)}
+              fullWidth
+              size="small"
+              multiline
+              rows={3}
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace' }
+                }
+              }}
+            />
+          </Box>
 
-              {destAuthType === 'CustomSignature' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500">HMAC Signature Secret Key</label>
-                  <input
-                    type="password"
-                    placeholder="my-signing-secret"
-                    value={destSignatureSecret}
-                    onChange={(e) => setDestSignatureSecret(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Inject Headers (JSON Object)</label>
-                <textarea
-                  placeholder='{"X-My-Header": "value"}'
-                  value={destHeadersInject}
-                  onChange={(e) => setDestHeadersInject(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-850 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 font-mono h-16"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">Strip Headers (JSON Array)</label>
-                <textarea
-                  placeholder='["Authorization", "User-Agent"]'
-                  value={destHeadersStrip}
-                  onChange={(e) => setDestHeadersStrip(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-850 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 font-mono h-16"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500">
-                  Payload Transformation Template (e.g. Map keys)
-                </label>
-                <textarea
-                  placeholder='{"id": "{{user.id}}", "msg": "Event triggered"}'
-                  value={destTransformTemplate}
-                  onChange={(e) => setDestTransformTemplate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-850 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 font-mono h-20"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3">
-                <Button onClick={() => setShowDestModal(false)} variant="outline" type="button">
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={createDestMutation.isPending}>
-                  Add Destination
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+          <Box className="flex justify-end gap-2 pt-3">
+            <Button
+              onClick={() => setShowDestModal(false)}
+              variant="outlined"
+              size="small"
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+              sx={{ color: 'inherit' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              disabled={createDestMutation.isPending}
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+            >
+              {createDestMutation.isPending ? <CircularProgress size={16} color="inherit" /> : 'Add Destination'}
+            </Button>
+          </Box>
+        </form>
+      </Dialog>
 
       {/* SIDE-BY-SIDE DIFF MODAL */}
-      {showDiffModal && diffIds.length === 2 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
-          <Card className="max-w-4xl w-full p-6 border-zinc-200 dark:border-zinc-800 space-y-4">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Payload Structure Comparison</h3>
-              <button onClick={() => setShowDiffModal(false)} className="text-zinc-400 hover:text-zinc-900 font-bold">
-                &times;
-              </button>
-            </div>
+      <Dialog
+        isOpen={showDiffModal && diffIds.length === 2}
+        onClose={() => setShowDiffModal(false)}
+        title="Payload Structure Comparison"
+      >
+        <Box className="space-y-4 pt-2">
+          {diffIds.length === 2 && (
             <DiffViewer
               payloadA={allPayloads.find((p) => p.id === diffIds[0])?.raw_body || '{}'}
               payloadB={allPayloads.find((p) => p.id === diffIds[1])?.raw_body || '{}'}
               nameA={`Payload ${diffIds[0].substring(0, 8)}`}
               nameB={`Payload ${diffIds[1].substring(0, 8)}`}
             />
-            <div className="flex justify-end">
-              <Button onClick={() => setShowDiffModal(false)}>Close Diff</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          )}
+          <Box className="flex justify-end pt-2">
+            <Button
+              onClick={() => setShowDiffModal(false)}
+              variant="contained"
+              size="small"
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+            >
+              Close Diff
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
 
       {/* EDIT AND REPLAY MODAL */}
-      {isEditingReplay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
-          <Card className="max-w-xl w-full p-6 border-zinc-200 dark:border-zinc-800 space-y-4">
-            <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Customize Payload for Replay</h3>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-zinc-500">Payload Raw Body</label>
-              <textarea
-                value={replayCustomBody}
-                onChange={(e) => setReplayCustomBody(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-850 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500 font-mono h-48"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsEditingReplay(false)} variant="outline">
-                Cancel
-              </Button>
-              <Button onClick={() => handleReplayPayload()} isLoading={replayPayloadMutation.isPending}>
-                Replay Webhook
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <Dialog
+        isOpen={isEditingReplay}
+        onClose={() => setIsEditingReplay(false)}
+        title="Customize Payload for Replay"
+      >
+        <Box className="space-y-4 pt-2">
+          <Box className="flex flex-col gap-1 w-full">
+            <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400" style={{ fontFamily: 'inherit' }}>
+              Payload Raw Body
+            </Typography>
+            <TextField
+              value={replayCustomBody}
+              onChange={(e) => setReplayCustomBody(e.target.value)}
+              fullWidth
+              size="small"
+              multiline
+              rows={8}
+              slotProps={{
+                input: {
+                  style: { borderRadius: '12px', fontSize: '12px', fontFamily: 'monospace' }
+                }
+              }}
+            />
+          </Box>
+          <Box className="flex justify-end gap-2 pt-2">
+            <Button
+              onClick={() => setIsEditingReplay(false)}
+              variant="outlined"
+              size="small"
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+              sx={{ color: 'inherit' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleReplayPayload()}
+              variant="contained"
+              size="small"
+              disabled={replayPayloadMutation.isPending}
+              style={{ textTransform: 'none', borderRadius: '8px' }}
+            >
+              {replayPayloadMutation.isPending ? <CircularProgress size={16} color="inherit" /> : 'Replay Webhook'}
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
     </>
   );
 }

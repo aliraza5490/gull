@@ -1,11 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Sliders, RefreshCw, Code, Trash2, ArrowUpRight } from 'lucide-react';
+import { RefreshCw, Code, ArrowUpRight } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useEndpoints, usePayloads, useDeliveries, useReplayPayload } from '../../services/webhook';
 import { useDashboardStore } from '../../store/dashboardStore';
 import { Card } from '../ui/card';
-import { Button } from '../ui/button';
 import { useToast } from '../../hooks/use-toast';
 
 export function PayloadInspector() {
@@ -84,84 +87,102 @@ export function PayloadInspector() {
   }
 
   return (
-    <div className="lg:col-span-4">
+    <Box className="lg:col-span-4">
       {selectedPayload ? (
-        <div className="space-y-6">
+        <Box className="space-y-6">
           {/* Detailed Inspector Card */}
-          <Card className="p-5 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 backdrop-blur-sm shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-850 pb-3">
-              <div>
-                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Inspect Payload</h4>
-                <p className="text-[10px] text-zinc-400">Detailed headers and body mapping.</p>
-              </div>
-              <div className="flex items-center gap-2">
+          <Card className="p-5 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 backdrop-blur-sm shadow-sm">
+            <Box className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-850 pb-3 mb-4">
+              <Box>
+                <Typography variant="body2" className="font-bold text-sm text-zinc-900 dark:text-zinc-100" style={{ fontFamily: 'inherit' }}>
+                  Inspect Payload
+                </Typography>
+                <Typography variant="caption" className="text-[10px] text-zinc-400" style={{ fontFamily: 'inherit' }}>
+                  Detailed headers and body mapping.
+                </Typography>
+              </Box>
+              <Box className="flex items-center gap-2">
                 <Button
                   onClick={() => handleReplayPayload()}
-                  size="xs"
-                  variant="outline"
-                  className="flex items-center gap-1"
+                  disabled={replayPayloadMutation.isPending}
+                  variant="outlined"
+                  size="small"
+                  className="flex items-center gap-1 border border-zinc-200 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200"
+                  style={{ textTransform: 'none', fontSize: '11px', borderRadius: '8px', padding: '4px 8px' }}
                 >
-                  <RefreshCw className="h-3.5 w-3.5" /> Replay
+                  {replayPayloadMutation.isPending ? (
+                    <CircularProgress size={12} color="inherit" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  )}
+                  Replay
                 </Button>
                 <Button
                   onClick={() => {
                     setReplayCustomBody(selectedPayload.raw_body);
                     setIsEditingReplay(true);
                   }}
-                  size="xs"
-                  variant="outline"
-                  className="flex items-center gap-1"
+                  variant="outlined"
+                  size="small"
+                  className="flex items-center gap-1 border border-zinc-200 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200"
+                  style={{ textTransform: 'none', fontSize: '11px', borderRadius: '8px', padding: '4px 8px' }}
                 >
                   <Code className="h-3.5 w-3.5" /> Edit & Replay
                 </Button>
-              </div>
-            </div>
+              </Box>
+            </Box>
 
             {/* Headers Preview */}
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Request Body</span>
+            <Box className="space-y-2 mb-4">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400 block" style={{ fontFamily: 'inherit' }}>
+                Request Body
+              </Typography>
               <pre className="text-[10px] font-mono p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl overflow-x-auto max-h-48">
                 {selectedPayload.raw_body || '{}'}
               </pre>
-            </div>
+            </Box>
 
             {/* Headers Inspectors */}
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Request Headers</span>
-              <div className="max-h-36 overflow-y-auto space-y-1 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl font-mono text-[10px]">
+            <Box className="space-y-2">
+              <Typography variant="caption" className="font-semibold text-zinc-500 dark:text-zinc-400 block" style={{ fontFamily: 'inherit' }}>
+                Request Headers
+              </Typography>
+              <Box className="max-h-36 overflow-y-auto space-y-1 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl font-mono text-[10px]">
                 {Object.entries(selectedPayload.headers || {}).map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900/60 pb-1">
+                  <Box key={k} className="flex justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900/60 pb-1">
                     <span className="text-zinc-400 shrink-0 font-bold">{k}</span>
-                    <span className="text-zinc-600 dark:text-zinc-300 truncate">{String(v)}</span>
-                  </div>
+                    <span className="text-zinc-650 dark:text-zinc-300 truncate">{String(v)}</span>
+                  </Box>
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Box>
           </Card>
 
           {/* Delivery logs details */}
-          <Card className="p-5 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 backdrop-blur-sm shadow-sm space-y-4">
-            <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-850 pb-3">
+          <Card className="p-5 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 backdrop-blur-sm shadow-sm">
+            <Typography variant="body2" className="font-bold text-sm text-zinc-900 dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-850 pb-3 mb-4 block" style={{ fontFamily: 'inherit' }}>
               Delivery Tracking & Audit Logs
-            </h4>
+            </Typography>
 
             {deliveries.length === 0 ? (
-              <div className="text-center py-6 text-xs text-zinc-400 font-semibold italic">
+              <Typography variant="caption" className="text-center py-6 text-xs text-zinc-400 font-semibold italic block" style={{ fontFamily: 'inherit' }}>
                 No active forwardings dispatched yet. Make sure active destinations are set.
-              </div>
+              </Typography>
             ) : (
-              <div className="space-y-3">
+              <Box className="space-y-3">
                 {deliveries.map((delivery) => {
                   const dest = (selectedPayload as any).destinations?.find((d: any) => d.id === delivery.destination_id);
                   const destName = dest ? dest.name : 'Unknown Destination';
 
                   return (
-                    <div
+                    <Box
                       key={delivery.id}
                       className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-850 rounded-xl space-y-2"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{destName}</span>
+                      <Box className="flex items-center justify-between">
+                        <Typography variant="caption" className="font-bold text-zinc-800 dark:text-zinc-200" style={{ fontFamily: 'inherit' }}>
+                          {destName}
+                        </Typography>
                         <span
                           className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
                             delivery.success
@@ -171,51 +192,55 @@ export function PayloadInspector() {
                         >
                           {delivery.success ? 'Success' : `Failed (${delivery.status_code || 'Err'})`}
                         </span>
-                      </div>
+                      </Box>
 
-                      <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-400 font-mono">
-                        <div>Latency: {delivery.latency_ms}ms</div>
-                        <div className="text-right">Attempt: #{delivery.attempt}</div>
-                      </div>
+                      <Box className="grid grid-cols-2 gap-2 text-[10px] text-zinc-400 font-mono">
+                        <Box>Latency: {delivery.latency_ms}ms</Box>
+                        <Box className="text-right">Attempt: #{delivery.attempt}</Box>
+                      </Box>
 
                       {delivery.error_message && (
-                        <div className="mt-2 text-[9px] font-mono text-rose-500 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded border border-rose-100/50 dark:border-rose-900/40">
+                        <Box className="mt-2 text-[9px] font-mono text-rose-500 bg-rose-50/50 dark:bg-rose-950/20 p-2 rounded border border-rose-100/50 dark:border-rose-900/40">
                           {delivery.error_message}
-                        </div>
+                        </Box>
                       )}
 
                       {delivery.response_body && (
-                        <div className="mt-2 space-y-1">
-                          <span className="text-[9px] text-zinc-400 font-semibold">Response Body</span>
+                        <Box className="mt-2 space-y-1">
+                          <Typography variant="caption" className="text-[9px] text-zinc-400 font-semibold block" style={{ fontFamily: 'inherit' }}>
+                            Response Body
+                          </Typography>
                           <pre className="text-[9px] font-mono p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 rounded overflow-x-auto max-h-24">
                             {delivery.response_body}
                           </pre>
-                        </div>
+                        </Box>
                       )}
 
-                      <div className="flex justify-end pt-1">
-                        <button
+                      <Box className="flex justify-end pt-1">
+                        <Button
                           onClick={() => handleReplayPayload(delivery.destination_id)}
-                          className="text-[9px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5 hover:underline"
+                          variant="text"
+                          className="text-[9px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5 hover:underline normal-case p-0 min-w-0"
+                          style={{ fontSize: '9px', textTransform: 'none', padding: 0 }}
                         >
                           Retry this target <ArrowUpRight className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
+                        </Button>
+                      </Box>
+                    </Box>
                   );
                 })}
-              </div>
+              </Box>
             )}
           </Card>
-        </div>
+        </Box>
       ) : (
-        <Card className="p-12 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 text-center space-y-3">
-          <Sliders className="h-10 w-10 text-zinc-400 mx-auto animate-pulse" />
-          <p className="text-xs text-zinc-400 font-medium italic">
+        <Card className="p-12 border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 text-center">
+          <RefreshCw className="h-10 w-10 text-zinc-400 mx-auto animate-spin mb-3" />
+          <Typography variant="caption" className="text-xs text-zinc-400 font-medium italic block" style={{ fontFamily: 'inherit' }}>
             Select a payload to begin deep inspection.
-          </p>
+          </Typography>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }

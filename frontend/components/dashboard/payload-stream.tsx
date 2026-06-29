@@ -1,7 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Activity, Sliders, Search } from 'lucide-react';
+import { Activity, Sliders, Search as SearchIcon } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Checkbox from '@mui/material/Checkbox';
+import Button from '@mui/material/Button';
+import InputAdornment from '@mui/material/InputAdornment';
 import { useEndpoints, usePayloads } from '../../services/webhook';
 import { useDashboardStore } from '../../store/dashboardStore';
 
@@ -67,81 +76,113 @@ export function PayloadStream() {
   }
 
   return (
-    <div className="lg:col-span-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+    <Box className="lg:col-span-4 space-y-4">
+      <Box className="flex items-center justify-between">
+        <Typography variant="body2" className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2" style={{ fontFamily: 'inherit' }}>
           <Activity className="h-4 w-4 text-emerald-500 animate-pulse" /> Payload Stream
-        </h4>
-        <div className="flex items-center gap-2">
-          <button
+        </Typography>
+        <Box className="flex items-center gap-2">
+          <Button
             onClick={() => {
               setDiffSelectMode(!diffSelectMode);
               setDiffIds([]);
             }}
-            className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold transition-colors ${
-              diffSelectMode
-                ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950 dark:border-indigo-900'
-                : 'bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400'
-            }`}
+            variant="outlined"
+            className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold transition-colors normal-case`}
+            style={{
+              textTransform: 'none',
+              padding: '4px 10px',
+              fontSize: '11px',
+              borderRadius: '8px',
+              backgroundColor: diffSelectMode ? 'var(--zinc-100)' : 'transparent',
+              borderColor: diffSelectMode ? 'var(--zinc-300)' : 'var(--zinc-200)'
+            }}
+            sx={{ color: 'inherit' }}
           >
             {diffSelectMode ? 'Cancel Diff' : 'Compare Payloads'}
-          </button>
+          </Button>
           {diffSelectMode && diffIds.length === 2 && (
-            <button
+            <Button
               onClick={() => setShowDiffModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition-colors"
+              variant="contained"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition-colors normal-case"
+              style={{ textTransform: 'none', padding: '4px 10px', fontSize: '11px', borderRadius: '8px' }}
             >
               View Diff
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Search & Filters */}
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search body query..."
-            value={payloadSearch}
-            onChange={(e) => setPayloadSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-zinc-200 bg-white dark:border-zinc-850 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-          />
-        </div>
-        <div className="flex gap-2">
-          <select
-            value={payloadMethodFilter}
-            onChange={(e) => setPayloadMethodFilter(e.target.value)}
-            className="text-[11px] font-medium border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1.5 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
-          >
-            <option value="">All Methods</option>
-            <option value="POST">POST</option>
-            <option value="GET">GET</option>
-            <option value="PUT">PUT</option>
-            <option value="PATCH">PATCH</option>
-            <option value="DELETE">DELETE</option>
-          </select>
-          <select
-            value={payloadSuccessFilter === undefined ? '' : String(payloadSuccessFilter)}
-            onChange={(e) => setPayloadSuccessFilter(e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="text-[11px] font-medium border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1.5 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 flex-1"
-          >
-            <option value="">All Statuses</option>
-            <option value="true">Successful Deliveries</option>
-            <option value="false">Failed / Retrying</option>
-          </select>
-        </div>
-      </div>
+      <Box className="space-y-2">
+        <TextField
+          placeholder="Search body query..."
+          value={payloadSearch}
+          onChange={(e) => setPayloadSearch(e.target.value)}
+          fullWidth
+          size="small"
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon className="h-4 w-4 text-zinc-400" />
+                </InputAdornment>
+              ),
+              style: { borderRadius: '12px', fontSize: '12px' }
+            }
+          }}
+          sx={{
+            backgroundColor: 'var(--white)',
+            '.dark &': { backgroundColor: 'var(--zinc-900)' },
+            borderRadius: '12px'
+          }}
+        />
+        <Box className="flex gap-2">
+          <FormControl size="small" style={{ minWidth: '110px' }}>
+            <Select
+              value={payloadMethodFilter || ''}
+              onChange={(e) => setPayloadMethodFilter(e.target.value as string)}
+              displayEmpty
+              className="bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-400"
+              style={{ fontSize: '11px', borderRadius: '8px' }}
+            >
+              <MenuItem value="" style={{ fontSize: '11px' }}>All Methods</MenuItem>
+              <MenuItem value="POST" style={{ fontSize: '11px' }}>POST</MenuItem>
+              <MenuItem value="GET" style={{ fontSize: '11px' }}>GET</MenuItem>
+              <MenuItem value="PUT" style={{ fontSize: '11px' }}>PUT</MenuItem>
+              <MenuItem value="PATCH" style={{ fontSize: '11px' }}>PATCH</MenuItem>
+              <MenuItem value="DELETE" style={{ fontSize: '11px' }}>DELETE</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" className="flex-1">
+            <Select
+              value={payloadSuccessFilter === undefined ? '' : String(payloadSuccessFilter)}
+              onChange={(e) => setPayloadSuccessFilter(e.target.value === '' ? undefined : e.target.value === 'true')}
+              displayEmpty
+              className="bg-white dark:bg-zinc-900 text-zinc-655 dark:text-zinc-400"
+              style={{ fontSize: '11px', borderRadius: '8px' }}
+            >
+              <MenuItem value="" style={{ fontSize: '11px' }}>All Statuses</MenuItem>
+              <MenuItem value="true" style={{ fontSize: '11px' }}>Successful Deliveries</MenuItem>
+              <MenuItem value="false" style={{ fontSize: '11px' }}>Failed / Retrying</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
       {/* Payloads List */}
-      <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+      <Box className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
         {allPayloads.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-2xl bg-white dark:bg-zinc-900/10">
+          <Box className="text-center py-12 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-2xl bg-white dark:bg-zinc-900/10">
             <Sliders className="h-8 w-8 text-zinc-400 mx-auto mb-2" />
-            <p className="text-xs text-zinc-500 font-semibold">Waiting for incoming webhooks...</p>
-            <p className="text-[10px] text-zinc-400 mt-1">Send requests to the URL above to inspect payloads.</p>
-          </div>
+            <Typography variant="caption" className="text-zinc-550 font-semibold block" style={{ fontFamily: 'inherit' }}>
+              Waiting for incoming webhooks...
+            </Typography>
+            <Typography variant="caption" className="text-[10px] text-zinc-400 mt-1 block" style={{ fontFamily: 'inherit' }}>
+              Send requests to the URL above to inspect payloads.
+            </Typography>
+          </Box>
         ) : (
           allPayloads.map((payload) => {
             const isSelected = selectedPayloadId === payload.id;
@@ -149,7 +190,7 @@ export function PayloadStream() {
             const receivedDateStr = new Date(payload.received_at).toLocaleTimeString();
 
             return (
-              <div
+              <Box
                 key={payload.id}
                 onClick={() => {
                   if (diffSelectMode) {
@@ -168,20 +209,20 @@ export function PayloadStream() {
               >
                 {/* Schema Drift Indicator Ribbon */}
                 {payload.is_drifted && (
-                  <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl">
+                  <Box className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl">
                     DRIFT
-                  </div>
+                  </Box>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <Box className="flex items-center justify-between">
+                  <Box className="flex items-center gap-2">
                     {diffSelectMode && (
-                      <input
-                        type="checkbox"
+                      <Checkbox
+                        size="small"
                         checked={isDiffChecked}
                         onChange={() => toggleDiffSelect(payload.id)}
-                        className="h-3.5 w-3.5 text-indigo-600 rounded border-zinc-300 focus:ring-indigo-500"
                         onClick={(e) => e.stopPropagation()}
+                        sx={{ padding: 0 }}
                       />
                     )}
                     <span
@@ -197,12 +238,12 @@ export function PayloadStream() {
                     </span>
                     <span
                       className={`text-xs font-mono truncate max-w-[120px] ${
-                        isSelected && !diffSelectMode ? 'text-white dark:text-zinc-950' : 'text-zinc-500'
+                        isSelected && !diffSelectMode ? 'text-white dark:text-zinc-955' : 'text-zinc-500'
                       }`}
                     >
                       ID: {payload.id.substring(0, 8)}
                     </span>
-                  </div>
+                  </Box>
                   <span
                     className={`text-[10px] ${
                       isSelected && !diffSelectMode
@@ -212,12 +253,12 @@ export function PayloadStream() {
                   >
                     {receivedDateStr}
                   </span>
-                </div>
-              </div>
+                </Box>
+              </Box>
             );
           })
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

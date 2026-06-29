@@ -1,13 +1,16 @@
 import React from 'react';
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
 
-export function Card({ children, className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function Card({ children, className = '', ...props }: React.ComponentProps<typeof MuiCard>) {
   return (
-    <div
+    <MuiCard
       className={`rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40 backdrop-blur-sm ${className}`}
+      elevation={0}
       {...props}
     >
       {children}
-    </div>
+    </MuiCard>
   );
 }
 
@@ -35,11 +38,11 @@ export function CardDescription({ children, className = '', ...props }: React.HT
   );
 }
 
-export function CardContent({ children, className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function CardContent({ children, className = '', ...props }: React.ComponentProps<typeof MuiCardContent>) {
   return (
-    <div className={`px-6 pb-6 pt-0 ${className}`} {...props}>
+    <MuiCardContent className={`px-6 pb-6 pt-0 ${className}`} {...props}>
       {children}
-    </div>
+    </MuiCardContent>
   );
 }
 
