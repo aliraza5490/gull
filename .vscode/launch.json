@@ -1,0 +1,56 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI: Run/Debug Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "python": "${workspaceFolder}/backend/.venv/bin/python",
+      "args": [
+        "main:app",
+        "--reload",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "jinja": true,
+      "env": {
+        "DATABASE_URL": "postgresql://gull_user:gull_pass@localhost:5432/gull_db"
+      },
+      "presentation": {
+        "group": "Gull Platform",
+        "order": 1
+      }
+    },
+    {
+      "name": "Next.js: Debug Frontend (Server + Client Browser)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "http://localhost:8000"
+      },
+      "presentation": {
+        "group": "Gull Platform",
+        "order": 2
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Gull Full Stack (Backend + Frontend)",
+      "configurations": [
+        "FastAPI: Run/Debug Backend",
+        "Next.js: Debug Frontend (Server + Client Browser)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

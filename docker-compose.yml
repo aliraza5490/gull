@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    container_name: gull_db
+    restart: always
+    environment:
+      POSTGRES_USER: gull_user
+      POSTGRES_PASSWORD: gull_pass
+      POSTGRES_DB: gull_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gull_user -d gull_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
