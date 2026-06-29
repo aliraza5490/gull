@@ -4,6 +4,12 @@ Alembic env.py – configures the migration environment.
 Imports all SQLModel models so autogenerate can detect schema changes.
 """
 
+import sys
+import os
+
+# Add parent directory to sys.path to resolve 'app' module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool

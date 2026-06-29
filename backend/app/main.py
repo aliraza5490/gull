@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_db_and_tables
 from app.api.router import api_router
+from app.api.v1.receiver import router as receiver_router
 
 # Import models so SQLModel registers them before create_all
 import app.models  # noqa: F401
@@ -44,3 +45,5 @@ app.add_middleware(
 
 # ── Routers ─────────────────────────────────────────────────
 app.include_router(api_router)
+app.include_router(receiver_router)
+
