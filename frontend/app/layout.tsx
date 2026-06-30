@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Instrument_Sans } from 'next/font/google';
+import { Geist, Geist_Mono, Instrument_Sans, Raleway } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { cn } from "@/lib/utils";
 
-const instrumentSans = Instrument_Sans({subsets:['latin'],variable:'--font-sans'});
+const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", instrumentSans.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", raleway.variable)}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
