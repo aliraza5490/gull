@@ -91,21 +91,16 @@ export default function AuthLayout({
           box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
         }
 
-        .auth-card-wrapper {
-          perspective: 1000px;
-        }
-
         .auth-card-wrapper > :global(*) {
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          transition: box-shadow 0.3s ease;
         }
 
         .auth-card-wrapper:hover > :global(*) {
-          transform: perspective(1000px) rotateX(1deg) rotateY(-1deg) translateZ(5px);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(99, 102, 241, 0.05);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08), 0 0 20px rgba(99, 102, 241, 0.04);
         }
 
         :global(.dark) .auth-card-wrapper:hover > :global(*) {
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(99, 102, 241, 0.08);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.06);
         }
 
         .auth-orb {
