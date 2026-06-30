@@ -92,7 +92,7 @@ export default function DashboardLayout({
           <div className="flex min-h-screen w-full bg-background font-sans">
             <Sidebar>
               {/* Header Brand */}
-              <SidebarHeader className="h-16 flex items-center px-6 border-b border-border/40 shrink-0">
+              <SidebarHeader className="h-16 flex items-center justify-center px-6 border-b border-border/40 shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                     <svg
@@ -118,7 +118,7 @@ export default function DashboardLayout({
                   onWorkspaceChange={handleWorkspaceChange}
                 />
 
-                <SidebarMenu className="gap-1 mt-2">
+                <SidebarMenu className="gap-2 mt-2">
                   {navItems.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
                     return (

@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
 export default function DashboardOverviewPage() {
   const router = useRouter()
@@ -56,46 +58,84 @@ export default function DashboardOverviewPage() {
     }
   }, [activeEndpoints])
 
-  // Render dummy traffic chart using custom SVG to eliminate charting packages mismatch
+  // Render dummy traffic chart using Shadcn / Recharts component
   const renderTrafficChart = () => {
-    const data = [12, 19, 3, 5, 2, 3, 10, 15, 22, 18, 25, 30]
-    const maxVal = Math.max(...data)
-    const chartHeight = 140
-    const chartWidth = 500
+    const chartData = [
+      { hour: "12h ago", requests: 12 },
+      { hour: "11h ago", requests: 19 },
+      { hour: "10h ago", requests: 3 },
+      { hour: "9h ago", requests: 5 },
+      { hour: "8h ago", requests: 2 },
+      { hour: "7h ago", requests: 3 },
+      { hour: "6h ago", requests: 10 },
+      { hour: "5h ago", requests: 15 },
+      { hour: "4h ago", requests: 22 },
+      { hour: "3h ago", requests: 18 },
+      { hour: "2h ago", requests: 25 },
+      { hour: "1h ago", requests: 30 },
+    ]
 
-    const points = data
-      .map((val, index) => {
-        const x = (index / (data.length - 1)) * chartWidth
-        const y = chartHeight - (val / maxVal) * chartHeight + 10
-        return `${x},${y}`
-      })
-      .join(" ")
-
-    const fillPoints = `0,${chartHeight + 20} ${points} ${chartWidth},${chartHeight + 20}`
+    const chartConfig = {
+      requests: {
+        label: "Requests",
+        color: "var(--primary)",
+      },
+    } satisfies ChartConfig
 
     return (
-      <div className="relative w-full h-[160px] mt-4">
-        <svg viewBox={`0 0 ${chartWidth} ${chartHeight + 20}`} className="w-full h-full">
-          <defs>
-            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6b77ff" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#6b77ff" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <polyline
-            fill="url(#chartGrad)"
-            stroke="none"
-            points={fillPoints}
-          />
-          <polyline
-            fill="none"
-            stroke="#6b77ff"
-            strokeWidth="3"
-            points={points}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+      <div className="w-full h-[200px] mt-4">
+        <ChartContainer config={chartConfig} className="w-full h-full min-h-[200px]">
+          <AreaChart
+            accessibilityLayer
+            data={chartData}
+            margin={{
+              left: -20,
+              right: 12,
+              top: 10,
+              bottom: 10,
+            }}
+          >
+            <defs>
+              <linearGradient id="fillRequests" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-requests)"
+                  stopOpacity={0.4}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-requests)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+            <XAxis
+              dataKey="hour"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+            />
+            <Area
+              dataKey="requests"
+              type="natural"
+              fill="url(#fillRequests)"
+              fillOpacity={0.4}
+              stroke="var(--color-requests)"
+              strokeWidth={2}
+              stackId="a"
+            />
+          </AreaChart>
+        </ChartContainer>
       </div>
     )
   }
