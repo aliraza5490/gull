@@ -137,10 +137,10 @@ export function CreateEndpointDialog({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                {[
+                {([
                   { value: "persistent", label: "Persistent (Production)" },
                   { value: "temporary", label: "Temporary (Short-lived Dev Test)" },
-                ].map((item) => (
+                ] as const).map((item) => (
                   <DropdownMenuItem key={item.value} onClick={() => setType(item.value)}>
                     {item.label}
                   </DropdownMenuItem>
