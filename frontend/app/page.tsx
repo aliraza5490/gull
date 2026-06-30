@@ -10,7 +10,7 @@ export default function Home() {
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1>Gull Frontend (Minimal)</h1>
       <p>Material UI and state stores have been removed. Hooks and API services are preserved.</p>
-      
+
       <h2>Workspaces</h2>
       {isLoading && <p>Loading workspaces...</p>}
       {error && <p style={{ color: 'red' }}>Error loading workspaces: {error.message}</p>}
