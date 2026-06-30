@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronDown } from "lucide-react"
 
 import {
   Dialog,
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCreateEndpoint } from "@/services/webhook"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface CreateEndpointDialogProps {
   workspaceId: string | null
@@ -121,19 +121,32 @@ export function CreateEndpointDialog({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="type">Endpoint Durability</Label>
-            <Select
-              value={type}
-              onValueChange={(val: any) => setType(val)}
-              disabled={createEndpointMutation.isPending}
-            >
-              <SelectTrigger id="type">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="persistent">Persistent (Production)</SelectItem>
-                <SelectItem value="temporary">Temporary (Short-lived Dev Test)</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild disabled={createEndpointMutation.isPending}>
+                <Button
+                  id="type"
+                  variant="outline"
+                  className="w-full justify-between font-normal bg-background border-input"
+                >
+                  {type === "persistent"
+                    ? "Persistent (Production)"
+                    : type === "temporary"
+                    ? "Temporary (Short-lived Dev Test)"
+                    : "Select type"}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                {[
+                  { value: "persistent", label: "Persistent (Production)" },
+                  { value: "temporary", label: "Temporary (Short-lived Dev Test)" },
+                ].map((item) => (
+                  <DropdownMenuItem key={item.value} onClick={() => setType(item.value)}>
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex flex-col gap-2">

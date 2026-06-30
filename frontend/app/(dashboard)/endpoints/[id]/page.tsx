@@ -18,6 +18,7 @@ import {
   Calendar,
   AlertTriangle,
   Link2,
+  ChevronDown,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -43,6 +44,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/empty-state"
 import { PayloadInspector } from "@/components/endpoints/payload-inspector"
 import { DestinationForm } from "@/components/endpoints/destination-form"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { DiffModal } from "@/components/endpoints/diff-modal"
 import { CopyButton } from "@/components/copy-button"
 
@@ -189,7 +191,7 @@ export default function EndpointDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Badge variant={endpoint.is_active ? "success" : "secondary"}>
+          <Badge variant={endpoint.is_active ? "outline" : "secondary"} className={endpoint.is_active ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}>
             {endpoint.is_active ? "Active" : "Paused"}
           </Badge>
         </div>
@@ -321,7 +323,7 @@ export default function EndpointDetailPage() {
                         </TableCell>
                         <TableCell className="text-xs">{payload.content_type || "N/A"}</TableCell>
                         <TableCell>
-                          <Badge variant={payload.is_drifted ? "destructive" : "success"}>
+                          <Badge variant={payload.is_drifted ? "destructive" : "outline"} className={payload.is_drifted ? "" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"}>
                             {payload.is_drifted ? "Drifted" : "Verified"}
                           </Badge>
                         </TableCell>
@@ -542,15 +544,34 @@ export default function EndpointDetailPage() {
               <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-xs font-semibold text-muted-foreground">Link Expiration Duration</span>
-                  <select
-                    className="w-full sm:max-w-xs border rounded-lg p-2 text-sm bg-background"
-                    value={shareExpiration}
-                    onChange={(e) => setShareExpiration(e.target.value)}
-                  >
-                    <option value="3600">1 Hour</option>
-                    <option value="86400">1 Day</option>
-                    <option value="604800">1 Week</option>
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full sm:max-w-xs justify-between font-normal bg-background border-input"
+                      >
+                        {shareExpiration === "3600"
+                          ? "1 Hour"
+                          : shareExpiration === "86400"
+                          ? "1 Day"
+                          : shareExpiration === "604800"
+                          ? "1 Week"
+                          : "Select duration"}
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                      {[
+                        { value: "3600", label: "1 Hour" },
+                        { value: "86400", label: "1 Day" },
+                        { value: "604800", label: "1 Week" },
+                      ].map((item) => (
+                        <DropdownMenuItem key={item.value} onClick={() => setShareExpiration(item.value)}>
+                          {item.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <Button

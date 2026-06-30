@@ -300,7 +300,7 @@ export default function DashboardOverviewPage() {
                     <span className="text-xs text-muted-foreground">
                       {new Date(payload.received_at).toLocaleTimeString()}
                     </span>
-                    <Badge variant={payload.is_drifted ? "destructive" : "success"}>
+                    <Badge variant={payload.is_drifted ? "destructive" : "outline"} className={payload.is_drifted ? "" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"}>
                       {payload.is_drifted ? "Drifted" : "Verified"}
                     </Badge>
                   </div>

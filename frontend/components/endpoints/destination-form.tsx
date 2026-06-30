@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronDown } from "lucide-react"
 
 import {
   Dialog,
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useCreateDestination, useUpdateDestination } from "@/services/webhook"
 
 interface Destination {
@@ -182,17 +182,25 @@ export function DestinationForm({
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="dest-method">HTTP Method</Label>
-              <Select value={method} onValueChange={setMethod} disabled={isPending}>
-                <SelectTrigger id="dest-method">
-                  <SelectValue placeholder="Method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="PATCH">PATCH</SelectItem>
-                  <SelectItem value="GET">GET</SelectItem>
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild disabled={isPending}>
+                  <Button
+                    id="dest-method"
+                    variant="outline"
+                    className="w-full justify-between font-normal bg-background border-input"
+                  >
+                    {method || "Method"}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                  {["POST", "PUT", "PATCH", "GET"].map((m) => (
+                    <DropdownMenuItem key={m} onClick={() => setMethod(m)}>
+                      {m}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -221,17 +229,38 @@ export function DestinationForm({
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="dest-auth">Outbound Authentication</Label>
-              <Select value={authType} onValueChange={setAuthType} disabled={isPending}>
-                <SelectTrigger id="dest-auth">
-                  <SelectValue placeholder="Auth Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="None">None</SelectItem>
-                  <SelectItem value="Bearer">Bearer Token</SelectItem>
-                  <SelectItem value="Basic">Basic Auth</SelectItem>
-                  <SelectItem value="CustomSignature">Custom Verification Header</SelectItem>
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild disabled={isPending}>
+                  <Button
+                    id="dest-auth"
+                    variant="outline"
+                    className="w-full justify-between font-normal bg-background border-input"
+                  >
+                    {authType === "None"
+                      ? "None"
+                      : authType === "Bearer"
+                      ? "Bearer Token"
+                      : authType === "Basic"
+                      ? "Basic Auth"
+                      : authType === "CustomSignature"
+                      ? "Custom Verification Header"
+                      : "Auth Type"}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                  {[
+                    { value: "None", label: "None" },
+                    { value: "Bearer", label: "Bearer Token" },
+                    { value: "Basic", label: "Basic Auth" },
+                    { value: "CustomSignature", label: "Custom Verification Header" },
+                  ].map((item) => (
+                    <DropdownMenuItem key={item.value} onClick={() => setAuthType(item.value)}>
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
