@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Link2,
 } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 import {
   useSharedEndpoint,
@@ -81,13 +82,7 @@ export default function PublicShareInspectionPage() {
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <svg viewBox="0 0 24 24" fill="none" className="size-5" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12c0-1.5 1-3 3-4s4.5-1.5 6-1c1.5.5 2 2 1.5 3.5S11 14 9 15s-4.5 1-5.5-.5" />
-                <path d="M21 8c-1-1.5-3-2.5-5-2s-3 2.5-2.5 4.5 2 3.5 4 3 3.5-2 3.5-3.5V8Z" />
-                <path d="M12 10.5c.5 2 1 4 2 5.5s3 2.5 4.5 2" />
-              </svg>
-            </div>
+            <Logo size="lg" />
             <span className="text-sm font-bold tracking-tight">Gull Shared Console</span>
           </div>
           <ThemeToggle />

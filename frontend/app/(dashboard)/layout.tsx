@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Activity, LayoutDashboard, Settings, Radio } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 import { AuthGuard } from "@/components/auth-guard"
 import { WorkspaceSwitcher } from "@/components/workspace-switcher"
@@ -94,19 +95,7 @@ export default function DashboardLayout({
               {/* Header Brand */}
               <SidebarHeader className="h-16 flex items-center justify-center px-6 border-b border-border/40 shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="size-4"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M3 12c0-1.5 1-3 3-4s4.5-1.5 6-1c1.5.5 2 2 1.5 3.5S11 14 9 15s-4.5 1-5.5-.5" />
-                      <path d="M21 8c-1-1.5-3-2.5-5-2s-3 2.5-2.5 4.5 2 3.5 4 3 3.5-2 3.5-3.5V8Z" />
-                      <path d="M12 10.5c.5 2 1 4 2 5.5s3 2.5 4.5 2" />
-                    </svg>
-                  </div>
+                  <Logo size="sm" />
                   <span className="font-bold tracking-tight text-foreground text-sm">Gull</span>
                 </div>
               </SidebarHeader>

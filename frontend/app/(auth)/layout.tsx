@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-context';
+import { Logo } from '@/components/logo';
 
 export default function AuthLayout({
   children,
@@ -36,21 +37,7 @@ export default function AuthLayout({
       <div className="relative z-10 flex w-full max-w-md flex-col items-center px-4">
         {/* Gull Logo */}
         <div className="auth-logo mb-8 flex flex-col items-center gap-3">
-          <div className="auth-logo-icon flex size-14 items-center justify-center rounded-2xl bg-primary shadow-lg">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="size-8 text-primary-foreground"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 12c0-1.5 1-3 3-4s4.5-1.5 6-1c1.5.5 2 2 1.5 3.5S11 14 9 15s-4.5 1-5.5-.5" />
-              <path d="M21 8c-1-1.5-3-2.5-5-2s-3 2.5-2.5 4.5 2 3.5 4 3 3.5-2 3.5-3.5V8Z" />
-              <path d="M12 10.5c.5 2 1 4 2 5.5s3 2.5 4.5 2" />
-            </svg>
-          </div>
+          <Logo size="xl" className="auth-logo-icon" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Gull
           </h1>

@@ -17,6 +17,7 @@ import {
   Activity,
   RefreshCw,
 } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 const FEATURES = [
   {
@@ -81,21 +82,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary shadow-sm">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="size-5 text-primary-foreground"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 12c0-1.5 1-3 3-4s4.5-1.5 6-1c1.5.5 2 2 1.5 3.5S11 14 9 15s-4.5 1-5.5-.5" />
-                <path d="M21 8c-1-1.5-3-2.5-5-2s-3 2.5-2.5 4.5 2 3.5 4 3 3.5-2 3.5-3.5V8Z" />
-                <path d="M12 10.5c.5 2 1 4 2 5.5s3 2.5 4.5 2" />
-              </svg>
-            </div>
+            <Logo size="lg" />
             <span className="text-lg font-bold tracking-tight">Gull</span>
           </Link>
 
@@ -339,21 +326,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary shadow-sm">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="size-4 text-primary-foreground"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 12c0-1.5 1-3 3-4s4.5-1.5 6-1c1.5.5 2 2 1.5 3.5S11 14 9 15s-4.5 1-5.5-.5" />
-                  <path d="M21 8c-1-1.5-3-2.5-5-2s-3 2.5-2.5 4.5 2 3.5 4 3 3.5-2 3.5-3.5V8Z" />
-                  <path d="M12 10.5c.5 2 1 4 2 5.5s3 2.5 4.5 2" />
-                </svg>
-              </div>
+              <Logo size="md" />
               <span className="text-sm font-semibold">Gull</span>
             </div>
             <p className="text-sm text-muted-foreground">
