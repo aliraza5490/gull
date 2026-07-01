@@ -7,6 +7,9 @@
       "request": "launch",
       "module": "uvicorn",
       "python": "${workspaceFolder}/backend/.venv/bin/python",
+      "windows": {
+        "python": "${workspaceFolder}/backend/.venv/Scripts/python"
+      },
       "args": [
         "main:app",
         "--reload",
