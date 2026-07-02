@@ -34,9 +34,17 @@ export function CreateEndpointDialog({
   const [slug, setSlug] = React.useState("")
   const [type, setType] = React.useState<"persistent" | "temporary">("persistent")
   const [secret, setSecret] = React.useState("")
+  
+  const isSlugModified = React.useRef(false)
 
   // Auto-generate slug from name
   React.useEffect(() => {
+    if (!name.trim()) {
+      isSlugModified.current = false
+      setSlug("")
+      return
+    }
+    if (isSlugModified.current) return
     const clean = name
       .toLowerCase()
       .trim()
@@ -70,6 +78,7 @@ export function CreateEndpointDialog({
       setSlug("")
       setSecret("")
       setType("persistent")
+      isSlugModified.current = false
       onOpenChange(false)
     } catch (err: any) {
       toast.error(err.message || "Failed to create endpoint")
@@ -100,19 +109,35 @@ export function CreateEndpointDialog({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="slug">Slug Path</Label>
-            <div className="relative flex items-center">
+            <div className="relative flex items-center w-full">
               <span className="absolute left-3 text-xs text-muted-foreground select-none font-mono">
                 /v1/receiver/
               </span>
               <Input
                 id="slug"
-                className="pl-24 font-mono text-xs"
+                className="pl-24 pr-16 font-mono text-xs"
                 placeholder="stripe-webhook"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => {
+                  setSlug(e.target.value)
+                  isSlugModified.current = true
+                }}
                 disabled={createEndpointMutation.isPending}
                 required
               />
+              <Button
+                type="button"
+                variant="ghost"
+                className="absolute right-1 h-7 text-[10px] px-2 font-sans hover:bg-muted border border-border/20"
+                onClick={() => {
+                  const rand = "ep-" + Math.random().toString(36).substring(2, 10)
+                  setSlug(rand)
+                  isSlugModified.current = true
+                }}
+                disabled={createEndpointMutation.isPending}
+              >
+                Random
+              </Button>
             </div>
             <p className="text-[10px] text-muted-foreground leading-normal">
               Unique path suffix matching endpoint routing parameters.

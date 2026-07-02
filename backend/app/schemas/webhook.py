@@ -69,7 +69,7 @@ class WorkspaceMemberUpdate(SQLModel):
 # ── Receiver Endpoint Schemas ──────────────────────────────
 class ReceiverEndpointCreate(SQLModel):
     name: str
-    slug: str
+    slug: Optional[str] = None
     type: str = "persistent"  # temporary | persistent
     secret: Optional[str] = None
     is_active: bool = True

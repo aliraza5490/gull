@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { LogOut, Settings, User } from "lucide-react"
 
 import {
@@ -45,13 +46,17 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" disabled>
-          <User className="mr-2 size-4" />
-          <span>Profile</span>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href="/profile" className="flex items-center w-full">
+            <User className="mr-2 size-4" />
+            <span>Profile</span>
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer" disabled>
-          <Settings className="mr-2 size-4" />
-          <span>Settings</span>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href="/settings" className="flex items-center w-full">
+            <Settings className="mr-2 size-4" />
+            <span>Settings</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -94,10 +94,10 @@ export default function DashboardLayout({
             <Sidebar>
               {/* Header Brand */}
               <SidebarHeader className="h-16 flex items-center justify-center px-6 border-b border-border/40 shrink-0">
-                <div className="flex items-center gap-2">
+                <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Logo size="sm" />
                   <span className="font-bold tracking-tight text-foreground text-sm">Gull</span>
-                </div>
+                </Link>
               </SidebarHeader>
 
               {/* Switcher & Links */}

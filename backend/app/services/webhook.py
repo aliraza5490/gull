@@ -93,10 +93,16 @@ def create_endpoint(
         # Default temporary endpoint to expire in 24 hours
         expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
 
+    slug = data.slug
+    if not slug:
+        slug = f"ep-{secrets.token_hex(4)}"
+        while session.exec(select(ReceiverEndpoint).where(ReceiverEndpoint.slug == slug)).first():
+            slug = f"ep-{secrets.token_hex(4)}"
+
     endpoint = ReceiverEndpoint(
         workspace_id=workspace_id,
         name=data.name,
-        slug=data.slug,
+        slug=slug,
         type=data.type,
         secret=data.secret,
         is_active=data.is_active,
