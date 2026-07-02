@@ -156,11 +156,11 @@ async def handle_incoming_webhook(
     # 8. Multi-Destination Forwarding Fan-Out (in background task)
     background_tasks.add_task(
         dispatch_payload_to_destinations,
-        payload_id=str(payload.id),
-        endpoint_id=str(endpoint.id),
+        payload_id=payload.id,
+        endpoint_id=endpoint.id,
     )
 
-    return {"status": "received", "payload_id": str(payload.id), "is_drifted": is_drifted}
+    return {"status": "received", "payload_id": payload.id, "is_drifted": is_drifted}
 
 
 # ── Ingestion Handlers (Any HTTP Method) ──────────────────────
@@ -182,6 +182,21 @@ async def receive_temporary_webhook(
 
 @router.api_route("/w/{slug}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def receive_persistent_webhook(
+    slug: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session: SessionDep,
+):
+    return await handle_incoming_webhook(
+        endpoint_slug=slug,
+        request=request,
+        background_tasks=background_tasks,
+        session=session,
+    )
+
+
+@router.api_route("/api/v1/receiver/{slug}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def receive_webhook_by_slug(
     slug: str,
     request: Request,
     background_tasks: BackgroundTasks,

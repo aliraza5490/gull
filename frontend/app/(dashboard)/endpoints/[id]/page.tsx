@@ -69,7 +69,7 @@ export default function EndpointDetailPage() {
   // Fetch Endpoint details
   const { data: endpointsResponse, isLoading: endpointsLoading } = useEndpoints()
   const endpoint = React.useMemo(() => {
-    return endpointsResponse?.items?.find((e) => e.id === endpointId) || null
+    return endpointsResponse?.items?.find((e) => String(e.id) === String(endpointId)) || null
   }, [endpointsResponse, endpointId])
 
   // Fetch Destinations
@@ -139,8 +139,8 @@ export default function EndpointDetailPage() {
 
   const diffPayloads = React.useMemo(() => {
     if (diffSelection.length < 2) return { a: null, b: null }
-    const a = payloads.find((p) => p.id === diffSelection[0]) || null
-    const b = payloads.find((p) => p.id === diffSelection[1]) || null
+    const a = payloads.find((p) => String(p.id) === String(diffSelection[0])) || null
+    const b = payloads.find((p) => String(p.id) === String(diffSelection[1])) || null
     return { a, b }
   }, [diffSelection, payloads])
 
@@ -304,13 +304,13 @@ export default function EndpointDetailPage() {
                   </TableHeader>
                   <TableBody>
                     {payloads.map((payload) => (
-                      <TableRow key={payload.id} className={diffSelection.includes(payload.id) ? "bg-primary/5 hover:bg-primary/10" : ""}>
+                      <TableRow key={payload.id} className={diffSelection.includes(String(payload.id)) ? "bg-primary/5 hover:bg-primary/10" : ""}>
                         <TableCell className="text-center">
                           <input
                             type="checkbox"
                             className="size-3.5 rounded border-muted accent-primary cursor-pointer"
-                            checked={diffSelection.includes(payload.id)}
-                            onChange={() => handleDiffSelect(payload.id)}
+                            checked={diffSelection.includes(String(payload.id))}
+                            onChange={() => handleDiffSelect(String(payload.id))}
                           />
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground select-all">

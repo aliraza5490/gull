@@ -54,8 +54,8 @@ export default function DashboardLayout({
     if (saved) {
       setActiveWorkspaceId(saved)
     } else if (workspaces && workspaces.length > 0) {
-      setActiveWorkspaceId(workspaces[0].id)
-      localStorage.setItem("gull_active_workspace", workspaces[0].id)
+      setActiveWorkspaceId(String(workspaces[0].id))
+      localStorage.setItem("gull_active_workspace", String(workspaces[0].id))
     }
   }, [workspaces])
 

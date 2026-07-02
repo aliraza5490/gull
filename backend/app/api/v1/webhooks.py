@@ -1,4 +1,3 @@
-import uuid
 from typing import Optional, List
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Body, BackgroundTasks, Depends, status
@@ -26,7 +25,7 @@ from app.services.forwarder import forward_to_destination, dispatch_payload_to_d
 router = APIRouter()
 
 
-def get_default_workspace_for_user(session: SessionDep, user_id: uuid.UUID) -> uuid.UUID:
+def get_default_workspace_for_user(session: SessionDep, user_id: int) -> int:
     """Helper to auto-provision a default workspace for a user if none exists."""
     workspaces = webhook_service.get_workspaces_for_user(session=session, user_id=user_id)
     if not workspaces:
@@ -43,7 +42,7 @@ def get_default_workspace_for_user(session: SessionDep, user_id: uuid.UUID) -> u
     return workspaces[0].id
 
 
-def verify_workspace_membership(session: SessionDep, workspace_id: uuid.UUID, user_id: uuid.UUID):
+def verify_workspace_membership(session: SessionDep, workspace_id: int, user_id: int):
     """Raise 403 Forbidden if the user is not a member of the workspace."""
     member = webhook_service.get_workspace_member(session=session, workspace_id=workspace_id, user_id=user_id)
     if not member:
@@ -53,7 +52,7 @@ def verify_workspace_membership(session: SessionDep, workspace_id: uuid.UUID, us
         )
 
 
-def get_endpoint_with_auth(session: SessionDep, endpoint_id: uuid.UUID, user_id: uuid.UUID):
+def get_endpoint_with_auth(session: SessionDep, endpoint_id: int, user_id: int):
     """Retrieve an endpoint and verify the user is authorized to access it."""
     endpoint = webhook_service.get_endpoint(session=session, endpoint_id=endpoint_id)
     if not endpoint:
@@ -69,7 +68,7 @@ def create_webhook(
     *,
     session: SessionDep,
     data: ReceiverEndpointCreate,
-    workspace_id: Optional[uuid.UUID] = None,
+    workspace_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
 ):
     w_id = workspace_id or get_default_workspace_for_user(session, current_user.id)
@@ -81,7 +80,7 @@ def create_webhook(
 def list_webhooks(
     *,
     session: SessionDep,
-    workspace_id: Optional[uuid.UUID] = None,
+    workspace_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -103,7 +102,7 @@ def list_webhooks(
 def get_webhook(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     current_user: User = Depends(get_current_user),
 ):
     return get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -113,7 +112,7 @@ def get_webhook(
 def update_webhook(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     data: ReceiverEndpointUpdate,
     current_user: User = Depends(get_current_user),
 ):
@@ -127,7 +126,7 @@ def update_webhook(
 def delete_webhook(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     current_user: User = Depends(get_current_user),
 ):
     endpoint = get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -140,7 +139,7 @@ def delete_webhook(
 def create_destination(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     data: DestinationCreate,
     current_user: User = Depends(get_current_user),
 ):
@@ -152,7 +151,7 @@ def create_destination(
 def list_destinations(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -163,8 +162,8 @@ def list_destinations(
 def update_destination(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
-    destination_id: uuid.UUID,
+    endpoint_id: int,
+    destination_id: int,
     data: DestinationUpdate,
     current_user: User = Depends(get_current_user),
 ):
@@ -179,8 +178,8 @@ def update_destination(
 def delete_destination(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
-    destination_id: uuid.UUID,
+    endpoint_id: int,
+    destination_id: int,
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -196,7 +195,7 @@ def delete_destination(
 def list_payloads(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     method: Optional[str] = None,
@@ -226,8 +225,8 @@ def list_payloads(
 def get_payload(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
-    payload_id: uuid.UUID,
+    endpoint_id: int,
+    payload_id: int,
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -241,8 +240,8 @@ def get_payload(
 def list_deliveries(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
-    payload_id: uuid.UUID,
+    endpoint_id: int,
+    payload_id: int,
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -256,10 +255,10 @@ def list_deliveries(
 def replay_webhook(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
-    payload_id: uuid.UUID,
+    endpoint_id: int,
+    payload_id: int,
     background_tasks: BackgroundTasks,
-    destination_id: Optional[uuid.UUID] = Query(None),
+    destination_id: Optional[int] = Query(None),
     custom_body: Optional[str] = Body(None),
     current_user: User = Depends(get_current_user),
 ):
@@ -288,15 +287,15 @@ def replay_webhook(
             content_type=payload.content_type,
             is_drifted=payload.is_drifted,
         )
-        target_payload_id = str(replayed_payload.id)
+        target_payload_id = replayed_payload.id
     else:
-        target_payload_id = str(payload.id)
+        target_payload_id = payload.id
 
-    if destination_id:
+    if destination_id is not None:
         # Replay to one specific destination
         background_tasks.add_task(
             forward_to_destination,
-            destination_id=str(destination_id),
+            destination_id=destination_id,
             payload_id=target_payload_id,
         )
     else:
@@ -304,7 +303,7 @@ def replay_webhook(
         background_tasks.add_task(
             dispatch_payload_to_destinations,
             payload_id=target_payload_id,
-            endpoint_id=str(endpoint_id),
+            endpoint_id=endpoint_id,
         )
 
     return {"status": "replayed", "payload_id": target_payload_id}
@@ -316,7 +315,7 @@ def replay_webhook(
 def list_drift_alerts(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
@@ -329,7 +328,7 @@ def list_drift_alerts(
 def create_share_link(
     *,
     session: SessionDep,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     data: SessionShareCreate,
     current_user: User = Depends(get_current_user),
 ):
@@ -385,7 +384,7 @@ def list_shared_deliveries(
     *,
     session: SessionDep,
     token: str,
-    payload_id: uuid.UUID,
+    payload_id: int,
 ):
     share = webhook_service.get_share_by_token(session=session, token=token)
     if not share:

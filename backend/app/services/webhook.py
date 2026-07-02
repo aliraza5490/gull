@@ -3,7 +3,6 @@ Webhook service – all DB operations for workspaces, endpoints, destinations,
 payloads, and deliveries live here.
 """
 
-import uuid
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Tuple
@@ -51,12 +50,12 @@ def create_workspace(*, session: Session, name: str) -> Workspace:
     return workspace
 
 
-def get_workspace(*, session: Session, workspace_id: uuid.UUID) -> Optional[Workspace]:
+def get_workspace(*, session: Session, workspace_id: int) -> Optional[Workspace]:
     return session.get(Workspace, workspace_id)
 
 
 def add_workspace_member(
-    *, session: Session, workspace_id: uuid.UUID, user_id: uuid.UUID, role: str
+    *, session: Session, workspace_id: int, user_id: int, role: str
 ) -> WorkspaceMember:
     member = WorkspaceMember(workspace_id=workspace_id, user_id=user_id, role=role)
     session.add(member)
@@ -66,7 +65,7 @@ def add_workspace_member(
 
 
 def get_workspace_member(
-    *, session: Session, workspace_id: uuid.UUID, user_id: uuid.UUID
+    *, session: Session, workspace_id: int, user_id: int
 ) -> Optional[WorkspaceMember]:
     stmt = select(WorkspaceMember).where(
         WorkspaceMember.workspace_id == workspace_id,
@@ -75,7 +74,7 @@ def get_workspace_member(
     return session.exec(stmt).first()
 
 
-def get_workspaces_for_user(*, session: Session, user_id: uuid.UUID) -> List[Workspace]:
+def get_workspaces_for_user(*, session: Session, user_id: int) -> List[Workspace]:
     stmt = (
         select(Workspace)
         .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
@@ -86,7 +85,7 @@ def get_workspaces_for_user(*, session: Session, user_id: uuid.UUID) -> List[Wor
 
 # ── Receiver Endpoint Operations ──────────────────────────────
 def create_endpoint(
-    *, session: Session, workspace_id: uuid.UUID, data: ReceiverEndpointCreate
+    *, session: Session, workspace_id: int, data: ReceiverEndpointCreate
 ) -> ReceiverEndpoint:
     expires_at = data.expires_at
     if data.type == EndpointType.TEMPORARY and not expires_at:
@@ -114,14 +113,14 @@ def create_endpoint(
     return endpoint
 
 
-def get_endpoint(*, session: Session, endpoint_id: uuid.UUID) -> Optional[ReceiverEndpoint]:
+def get_endpoint(*, session: Session, endpoint_id: int) -> Optional[ReceiverEndpoint]:
     return session.get(ReceiverEndpoint, endpoint_id)
 
 
 def get_endpoint_by_slug(*, session: Session, slug: str) -> Optional[ReceiverEndpoint]:
     stmt = select(ReceiverEndpoint).where(ReceiverEndpoint.slug == slug)
     endpoint = session.exec(stmt).first()
-    if endpoint and endpoint.expires_at and endpoint.expires_at < datetime.now(timezone.utc):
+    if endpoint and endpoint.expires_at and endpoint.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         # Handle expired temporary endpoint: mark inactive or delete
         endpoint.is_active = False
         session.add(endpoint)
@@ -134,7 +133,7 @@ def get_endpoint_by_slug(*, session: Session, slug: str) -> Optional[ReceiverEnd
 def list_endpoints(
     *,
     session: Session,
-    workspace_id: uuid.UUID,
+    workspace_id: int,
     page: int = 1,
     page_size: int = 20,
 ) -> Tuple[List[ReceiverEndpoint], int]:
@@ -180,7 +179,7 @@ def delete_endpoint(*, session: Session, db_endpoint: ReceiverEndpoint) -> None:
 
 # ── Destination Operations ────────────────────────────────────
 def create_destination(
-    *, session: Session, endpoint_id: uuid.UUID, data: DestinationCreate
+    *, session: Session, endpoint_id: int, data: DestinationCreate
 ) -> Destination:
     destination = Destination(
         endpoint_id=endpoint_id,
@@ -201,11 +200,11 @@ def create_destination(
     return destination
 
 
-def get_destination(*, session: Session, destination_id: uuid.UUID) -> Optional[Destination]:
+def get_destination(*, session: Session, destination_id: int) -> Optional[Destination]:
     return session.get(Destination, destination_id)
 
 
-def list_destinations(*, session: Session, endpoint_id: uuid.UUID) -> List[Destination]:
+def list_destinations(*, session: Session, endpoint_id: int) -> List[Destination]:
     stmt = select(Destination).where(Destination.endpoint_id == endpoint_id)
     return list(session.exec(stmt).all())
 
@@ -233,7 +232,7 @@ def delete_destination(*, session: Session, db_destination: Destination) -> None
 def create_payload(
     *,
     session: Session,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     method: str,
     headers: dict,
     query_params: dict,
@@ -258,14 +257,14 @@ def create_payload(
     return payload
 
 
-def get_payload(*, session: Session, payload_id: uuid.UUID) -> Optional[WebhookPayload]:
+def get_payload(*, session: Session, payload_id: int) -> Optional[WebhookPayload]:
     return session.get(WebhookPayload, payload_id)
 
 
 def list_payloads(
     *,
     session: Session,
-    endpoint_id: uuid.UUID,
+    endpoint_id: int,
     page: int = 1,
     page_size: int = 20,
     method: Optional[str] = None,
@@ -320,8 +319,8 @@ def list_payloads(
 def create_delivery(
     *,
     session: Session,
-    payload_id: uuid.UUID,
-    destination_id: uuid.UUID,
+    payload_id: int,
+    destination_id: int,
     attempt: int,
     status_code: Optional[int],
     response_body: Optional[str],
@@ -346,7 +345,7 @@ def create_delivery(
 
 
 def list_deliveries_for_payload(
-    *, session: Session, payload_id: uuid.UUID
+    *, session: Session, payload_id: int
 ) -> List[WebhookDelivery]:
     stmt = select(WebhookDelivery).where(WebhookDelivery.payload_id == payload_id).order_by(WebhookDelivery.delivered_at.asc())
     return list(session.exec(stmt).all())
@@ -354,7 +353,7 @@ def list_deliveries_for_payload(
 
 # ── Schema Drift Alerts ───────────────────────────────────────
 def create_drift_alert(
-    *, session: Session, endpoint_id: uuid.UUID, payload_id: uuid.UUID, message: str
+    *, session: Session, endpoint_id: int, payload_id: int, message: str
 ) -> SchemaDriftAlert:
     alert = SchemaDriftAlert(
         endpoint_id=endpoint_id,
@@ -367,14 +366,14 @@ def create_drift_alert(
     return alert
 
 
-def list_drift_alerts(*, session: Session, endpoint_id: uuid.UUID) -> List[SchemaDriftAlert]:
+def list_drift_alerts(*, session: Session, endpoint_id: int) -> List[SchemaDriftAlert]:
     stmt = select(SchemaDriftAlert).where(SchemaDriftAlert.endpoint_id == endpoint_id).order_by(SchemaDriftAlert.created_at.desc())
     return list(session.exec(stmt).all())
 
 
 # ── Session Sharing Operations ────────────────────────────────
 def create_share(
-    *, session: Session, endpoint_id: uuid.UUID, expires_in_seconds: int = 3600
+    *, session: Session, endpoint_id: int, expires_in_seconds: int = 3600
 ) -> SessionShare:
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
@@ -388,7 +387,7 @@ def create_share(
 def get_share_by_token(*, session: Session, token: str) -> Optional[SessionShare]:
     stmt = select(SessionShare).where(SessionShare.token == token)
     share = session.exec(stmt).first()
-    if share and share.expires_at < datetime.now(timezone.utc):
+    if share and share.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         # Cleanup expired share link
         session.delete(share)
         session.commit()

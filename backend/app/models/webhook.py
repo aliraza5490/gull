@@ -17,7 +17,7 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True, max_length=255)
     hashed_password: str = Field(max_length=255)
     is_active: bool = Field(default=True)
@@ -31,7 +31,7 @@ class Workspace(SQLModel, table=True):
 
     __tablename__ = "workspaces"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=255, index=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -49,8 +49,8 @@ class WorkspaceMember(SQLModel, table=True):
 
     __tablename__ = "workspace_members"
 
-    workspace_id: _uuid.UUID = Field(foreign_key="workspaces.id", primary_key=True)
-    user_id: _uuid.UUID = Field(foreign_key="users.id", primary_key=True)
+    workspace_id: int = Field(foreign_key="workspaces.id", primary_key=True)
+    user_id: int = Field(foreign_key="users.id", primary_key=True)
     role: str = Field(default=WorkspaceRole.VIEWER)  # Admin, Developer, Viewer
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -67,8 +67,8 @@ class ReceiverEndpoint(SQLModel, table=True):
 
     __tablename__ = "receiver_endpoints"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    workspace_id: _uuid.UUID = Field(foreign_key="workspaces.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    workspace_id: int = Field(foreign_key="workspaces.id", index=True)
     name: str = Field(max_length=255)
     slug: str = Field(unique=True, index=True, max_length=255)
     type: str = Field(default=EndpointType.PERSISTENT)  # temporary | persistent
@@ -88,8 +88,8 @@ class Destination(SQLModel, table=True):
 
     __tablename__ = "destinations"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    endpoint_id: _uuid.UUID = Field(foreign_key="receiver_endpoints.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
     name: str = Field(max_length=255)
     url: str = Field(max_length=2048)
     method: str = Field(default="POST", max_length=10)
@@ -110,8 +110,8 @@ class WebhookPayload(SQLModel, table=True):
 
     __tablename__ = "webhook_payloads"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    endpoint_id: _uuid.UUID = Field(foreign_key="receiver_endpoints.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
     method: str = Field(max_length=10)
     headers: dict = Field(default_factory=dict, sa_column=Column(JSON))
     query_params: dict = Field(default_factory=dict, sa_column=Column(JSON))
@@ -129,9 +129,9 @@ class WebhookDelivery(SQLModel, table=True):
 
     __tablename__ = "webhook_deliveries"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    payload_id: _uuid.UUID = Field(foreign_key="webhook_payloads.id", index=True)
-    destination_id: _uuid.UUID = Field(foreign_key="destinations.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    payload_id: int = Field(foreign_key="webhook_payloads.id", index=True)
+    destination_id: int = Field(foreign_key="destinations.id", index=True)
     attempt: int = Field(default=1)
     status_code: Optional[int] = Field(default=None)
     response_body: Optional[str] = Field(default=None)
@@ -148,9 +148,9 @@ class SchemaDriftAlert(SQLModel, table=True):
 
     __tablename__ = "schema_drift_alerts"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    endpoint_id: _uuid.UUID = Field(foreign_key="receiver_endpoints.id", index=True)
-    payload_id: _uuid.UUID = Field(foreign_key="webhook_payloads.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
+    payload_id: int = Field(foreign_key="webhook_payloads.id", index=True)
     message: str = Field(max_length=1024)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -162,8 +162,8 @@ class SessionShare(SQLModel, table=True):
 
     __tablename__ = "session_shares"
 
-    id: _uuid.UUID = Field(default_factory=_uuid.uuid4, primary_key=True)
-    endpoint_id: _uuid.UUID = Field(foreign_key="receiver_endpoints.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
     token: str = Field(unique=True, index=True, max_length=255)
     expires_at: datetime = Field()
     created_at: datetime = Field(

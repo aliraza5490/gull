@@ -59,8 +59,8 @@ def transform_payload(payload_body: dict, template_str: str) -> str:
 
 
 async def forward_to_destination(
-    destination_id: str,
-    payload_id: str,
+    destination_id: int,
+    payload_id: int,
 ):
     """
     Asynchronously forwards a webhook payload to a specific destination.
@@ -186,14 +186,14 @@ async def forward_to_destination(
 
 
 async def dispatch_payload_to_destinations(
-    payload_id: str,
-    endpoint_id: str,
+    payload_id: int,
+    endpoint_id: int,
 ):
     """
     Triggers parallel forwarding for a payload to all active destinations of the endpoint.
     """
     with Session(engine) as db:
-        destinations = webhook_service.list_destinations(session=db, endpoint_id=uuid.UUID(endpoint_id))
+        destinations = webhook_service.list_destinations(session=db, endpoint_id=endpoint_id)
         active_destinations = [d for d in destinations if d.is_active]
 
     if not active_destinations:
@@ -201,7 +201,7 @@ async def dispatch_payload_to_destinations(
 
     # Run forwarding for all destinations in parallel
     tasks = [
-        forward_to_destination(str(dest.id), payload_id)
+        forward_to_destination(dest.id, payload_id)
         for dest in active_destinations
     ]
     await asyncio.gather(*tasks, return_exceptions=True)

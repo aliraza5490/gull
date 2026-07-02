@@ -36,7 +36,7 @@ export function WorkspaceSwitcher({
   const [newWorkspaceName, setNewWorkspaceName] = React.useState("")
 
   const activeWorkspace = React.useMemo(() => {
-    return workspaces?.find((w) => w.id === activeWorkspaceId) || null
+    return workspaces?.find((w) => String(w.id) === String(activeWorkspaceId)) || null
   }, [workspaces, activeWorkspaceId])
 
   // Select first workspace if activeWorkspaceId is not set
@@ -87,11 +87,11 @@ export function WorkspaceSwitcher({
         {workspaces?.map((ws) => (
           <DropdownMenuItem
             key={ws.id}
-            onClick={() => onWorkspaceChange(ws.id)}
+            onClick={() => onWorkspaceChange(String(ws.id))}
             className="flex items-center justify-between"
           >
             <span className="truncate">{ws.name}</span>
-            {ws.id === activeWorkspaceId && <Check className="size-4 text-primary" />}
+            {String(ws.id) === String(activeWorkspaceId) && <Check className="size-4 text-primary" />}
           </DropdownMenuItem>
         ))}
 

@@ -24,7 +24,7 @@ class UserCreate(SQLModel):
 
 
 class UserRead(SQLModel):
-    id: uuid.UUID
+    id: int
     email: str
     is_active: bool
     created_at: datetime
@@ -50,14 +50,14 @@ class WorkspaceUpdate(SQLModel):
 
 
 class WorkspaceRead(SQLModel):
-    id: uuid.UUID
+    id: int
     name: str
     created_at: datetime
 
 
 class WorkspaceMemberRead(SQLModel):
-    workspace_id: uuid.UUID
-    user_id: uuid.UUID
+    workspace_id: int
+    user_id: int
     role: str
     created_at: datetime
 
@@ -85,8 +85,8 @@ class ReceiverEndpointUpdate(SQLModel):
 
 
 class ReceiverEndpointRead(SQLModel):
-    id: uuid.UUID
-    workspace_id: uuid.UUID
+    id: int
+    workspace_id: int
     name: str
     slug: str
     type: str
@@ -131,8 +131,8 @@ class DestinationUpdate(SQLModel):
 
 
 class DestinationRead(SQLModel):
-    id: uuid.UUID
-    endpoint_id: uuid.UUID
+    id: int
+    endpoint_id: int
     name: str
     url: str
     method: str
@@ -148,8 +148,8 @@ class DestinationRead(SQLModel):
 
 # ── Webhook Payload Schemas ────────────────────────────────
 class WebhookPayloadRead(SQLModel):
-    id: uuid.UUID
-    endpoint_id: uuid.UUID
+    id: int
+    endpoint_id: int
     method: str
     headers: dict
     query_params: dict
@@ -162,9 +162,9 @@ class WebhookPayloadRead(SQLModel):
 
 # ── Webhook Delivery Schemas ───────────────────────────────
 class WebhookDeliveryRead(SQLModel):
-    id: uuid.UUID
-    payload_id: uuid.UUID
-    destination_id: uuid.UUID
+    id: int
+    payload_id: int
+    destination_id: int
     attempt: int
     status_code: Optional[int]
     response_body: Optional[str]
@@ -176,9 +176,9 @@ class WebhookDeliveryRead(SQLModel):
 
 # ── Schema Drift Alert Schemas ─────────────────────────────
 class SchemaDriftAlertRead(SQLModel):
-    id: uuid.UUID
-    endpoint_id: uuid.UUID
-    payload_id: uuid.UUID
+    id: int
+    endpoint_id: int
+    payload_id: int
     message: str
     created_at: datetime
 
@@ -189,8 +189,8 @@ class SessionShareCreate(SQLModel):
 
 
 class SessionShareRead(SQLModel):
-    id: uuid.UUID
-    endpoint_id: uuid.UUID
+    id: int
+    endpoint_id: int
     token: str
     expires_at: datetime
     created_at: datetime

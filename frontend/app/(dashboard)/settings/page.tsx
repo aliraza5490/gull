@@ -52,7 +52,7 @@ export default function SettingsPage() {
   const [isUpdatingWorkspace, setIsUpdatingWorkspace] = React.useState(false)
 
   const activeWorkspace = React.useMemo(() => {
-    return workspaces?.find((w) => w.id === activeWorkspaceId) || null
+    return workspaces?.find((w) => String(w.id) === String(activeWorkspaceId)) || null
   }, [workspaces, activeWorkspaceId])
 
   React.useEffect(() => {
