@@ -47,6 +47,27 @@ function DialogOverlay({
   )
 }
 
+let lastDropdownOpenTime = 0
+
+if (typeof window !== "undefined") {
+  const handlePointerDown = () => {
+    const hasOpenDropdown =
+      document.querySelector('[data-radix-menu-content]') ||
+      document.querySelector('[role="listbox"]') ||
+      document.querySelector('[data-radix-popper-content-wrapper]') ||
+      document.querySelector('[data-slot="dropdown-menu-content"]') ||
+      document.querySelector('[data-slot="select-content"]')
+
+    if (hasOpenDropdown) {
+      lastDropdownOpenTime = Date.now()
+    }
+  }
+
+  window.addEventListener("pointerdown", handlePointerDown, { capture: true })
+  window.addEventListener("mousedown", handlePointerDown, { capture: true })
+  window.addEventListener("touchstart", handlePointerDown, { capture: true })
+}
+
 function DialogContent({
   className,
   children,
@@ -65,14 +86,32 @@ function DialogContent({
           className
         )}
         onPointerDownOutside={(e) => {
+          const wasDropdownOpenRecently = Date.now() - lastDropdownOpenTime < 500
           const hasOpenDropdown =
+            wasDropdownOpenRecently ||
             document.querySelector('[data-radix-menu-content]') ||
             document.querySelector('[role="listbox"]') ||
-            document.querySelector('[data-radix-popper-content-wrapper]')
+            document.querySelector('[data-radix-popper-content-wrapper]') ||
+            document.querySelector('[data-slot="dropdown-menu-content"]') ||
+            document.querySelector('[data-slot="select-content"]')
           if (hasOpenDropdown) {
             e.preventDefault()
           }
           props.onPointerDownOutside?.(e)
+        }}
+        onInteractOutside={(e) => {
+          const wasDropdownOpenRecently = Date.now() - lastDropdownOpenTime < 500
+          const hasOpenDropdown =
+            wasDropdownOpenRecently ||
+            document.querySelector('[data-radix-menu-content]') ||
+            document.querySelector('[role="listbox"]') ||
+            document.querySelector('[data-radix-popper-content-wrapper]') ||
+            document.querySelector('[data-slot="dropdown-menu-content"]') ||
+            document.querySelector('[data-slot="select-content"]')
+          if (hasOpenDropdown) {
+            e.preventDefault()
+          }
+          props.onInteractOutside?.(e)
         }}
         {...props}
       >

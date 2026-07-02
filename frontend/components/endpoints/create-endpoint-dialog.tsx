@@ -35,7 +35,18 @@ export function CreateEndpointDialog({
   const [type, setType] = React.useState<"persistent" | "temporary">("persistent")
   const [secret, setSecret] = React.useState("")
   
-  const isSlugModified = React.useRef(false)
+  const isSlugModified = React.useRef(true)
+
+  // Reset fields and set random slug when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setName("")
+      setSlug("ep-" + Math.random().toString(36).substring(2, 10))
+      setSecret("")
+      setType("persistent")
+      isSlugModified.current = true
+    }
+  }, [open])
 
   // Auto-generate slug from name
   React.useEffect(() => {
