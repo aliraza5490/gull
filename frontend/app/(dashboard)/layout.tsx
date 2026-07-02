@@ -91,17 +91,17 @@ export default function DashboardLayout({
       >
         <SidebarProvider>
           <div className="flex min-h-screen w-full bg-background font-sans">
-            <Sidebar>
+            <Sidebar collapsible="icon">
               {/* Header Brand */}
-              <SidebarHeader className="h-16 flex items-center justify-center px-6 border-b border-border/40 shrink-0">
-                <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <SidebarHeader className="h-16 flex items-center px-6 border-b border-border/40 shrink-0 justify-center group-data-[state=collapsed]:px-2 group-data-[state=collapsed]:justify-center">
+                <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity group-data-[state=collapsed]:justify-center">
                   <Logo size="sm" />
-                  <span className="font-bold tracking-tight text-foreground text-sm">Gull</span>
+                  <span className="font-bold tracking-tight text-foreground text-sm group-data-[state=collapsed]:hidden">Gull</span>
                 </Link>
               </SidebarHeader>
 
               {/* Switcher & Links */}
-              <SidebarContent className="flex flex-col gap-4 p-4">
+              <SidebarContent className="flex flex-col gap-4 p-4 group-data-[state=collapsed]:p-2">
                 <WorkspaceSwitcher
                   activeWorkspaceId={activeWorkspaceId}
                   onWorkspaceChange={handleWorkspaceChange}
@@ -116,10 +116,11 @@ export default function DashboardLayout({
                           asChild
                           isActive={isActive}
                           className="w-full"
+                          tooltip={item.title}
                         >
                           <Link href={item.href}>
                             <item.icon className="size-4 shrink-0" />
-                            <span>{item.title}</span>
+                            <span className="group-data-[state=collapsed]:hidden">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>

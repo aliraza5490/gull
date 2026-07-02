@@ -14,6 +14,9 @@ import {
 import { useWorkspaces, useCreateWorkspace } from "@/services/webhook"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { useSidebar } from "@/components/ui/sidebar"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 interface Workspace {
   id: string
@@ -34,6 +37,8 @@ export function WorkspaceSwitcher({
   const createWorkspaceMutation = useCreateWorkspace()
   const [isCreating, setIsCreating] = React.useState(false)
   const [newWorkspaceName, setNewWorkspaceName] = React.useState("")
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   const activeWorkspace = React.useMemo(() => {
     return workspaces?.find((w) => String(w.id) === String(activeWorkspaceId)) || null
@@ -64,22 +69,46 @@ export function WorkspaceSwitcher({
   }
 
   if (isLoading) {
-    return <Skeleton className="h-9 w-full rounded-lg" />
+    return <Skeleton className={cn("rounded-lg", isCollapsed ? "size-8 mx-auto" : "h-9 w-full")} />
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring select-none text-left justify-between hover:bg-muted/30 transition-colors">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-            <Building className="size-4" />
-          </div>
-          <span className="truncate">
-            {activeWorkspace ? activeWorkspace.name : "Select Workspace"}
-          </span>
-        </div>
-        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger className={cn(
+            "flex items-center rounded-lg border bg-card text-sm font-semibold shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring select-none hover:bg-muted/30 transition-colors",
+            isCollapsed
+              ? "size-8 justify-center p-0 mx-auto"
+              : "w-full px-3 py-2 text-left justify-between gap-2"
+          )}>
+            {isCollapsed ? (
+              <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+                <Building className="size-4" />
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+                    <Building className="size-4" />
+                  </div>
+                  <span className="truncate">
+                    {activeWorkspace ? activeWorkspace.name : "Select Workspace"}
+                  </span>
+                </div>
+                <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+              </>
+            )}
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent
+          side="right"
+          align="center"
+          hidden={!isCollapsed}
+        >
+          {activeWorkspace ? activeWorkspace.name : "Select Workspace"}
+        </TooltipContent>
+      </Tooltip>
       <DropdownMenuContent className="w-56 font-sans">
         <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
           Workspaces
