@@ -299,3 +299,28 @@ export function useSharedDeliveries(token: string, payloadId: string) {
   });
 }
 
+// Workspace stats
+export interface HourlyTraffic {
+  hour: string;
+  requests: number;
+}
+
+export interface WorkspaceStats {
+  total_endpoints: number;
+  active_endpoints: number;
+  paused_endpoints: number;
+  temp_endpoints: number;
+  success_rate: number;
+  drift_alerts_count: number;
+  traffic_chart: HourlyTraffic[];
+}
+
+export function useWorkspaceStats(workspaceId?: string) {
+  return useQuery<WorkspaceStats>({
+    queryKey: ['workspace-stats', workspaceId],
+    queryFn: () => api.get<WorkspaceStats>(`/workspaces/${workspaceId}/stats`),
+    enabled: !!workspaceId,
+  });
+}
+
+

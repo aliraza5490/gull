@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Radio, ShieldAlert, CheckCircle, FileJson, ArrowRight, RefreshCw, Layers } from "lucide-react"
 
 import { useWorkspace } from "@/app/(dashboard)/layout"
-import { useEndpoints, usePayloads } from "@/services/webhook"
+import { useEndpoints, usePayloads, useWorkspaceStats } from "@/services/webhook"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -23,6 +23,11 @@ export default function DashboardOverviewPage() {
     activeWorkspaceId || undefined,
     1,
     20
+  )
+
+  // Fetch stats for current workspace
+  const { data: statsData, isLoading: statsLoading } = useWorkspaceStats(
+    activeWorkspaceId || undefined
   )
 
   const activeEndpoints = React.useMemo(() => {
@@ -46,34 +51,19 @@ export default function DashboardOverviewPage() {
   }, [payloadsData])
 
   const stats = React.useMemo(() => {
-    const totalEndpoints = activeEndpoints.length
-    const activeEndpointsCount = activeEndpoints.filter((e) => e.is_active).length
-    const temporaryCount = activeEndpoints.filter((e) => e.type === "temporary").length
-
     return {
-      totalEndpoints,
-      activeEndpointsCount,
-      temporaryCount,
-      inactiveEndpointsCount: totalEndpoints - activeEndpointsCount,
+      totalEndpoints: statsData?.total_endpoints ?? 0,
+      activeEndpointsCount: statsData?.active_endpoints ?? 0,
+      temporaryCount: statsData?.temp_endpoints ?? 0,
+      inactiveEndpointsCount: statsData?.paused_endpoints ?? 0,
+      successRate: statsData?.success_rate ?? 100,
+      driftAlertsCount: statsData?.drift_alerts_count ?? 0,
     }
-  }, [activeEndpoints])
+  }, [statsData])
 
-  // Render dummy traffic chart using Shadcn / Recharts component
+  // Render traffic chart using workspace statistics
   const renderTrafficChart = () => {
-    const chartData = [
-      { hour: "12h ago", requests: 12 },
-      { hour: "11h ago", requests: 19 },
-      { hour: "10h ago", requests: 3 },
-      { hour: "9h ago", requests: 5 },
-      { hour: "8h ago", requests: 2 },
-      { hour: "7h ago", requests: 3 },
-      { hour: "6h ago", requests: 10 },
-      { hour: "5h ago", requests: 15 },
-      { hour: "4h ago", requests: 22 },
-      { hour: "3h ago", requests: 18 },
-      { hour: "2h ago", requests: 25 },
-      { hour: "1h ago", requests: 30 },
-    ]
+    const chartData = statsData?.traffic_chart || []
 
     const chartConfig = {
       requests: {
@@ -140,7 +130,7 @@ export default function DashboardOverviewPage() {
     )
   }
 
-  if (endpointsLoading) {
+  if (endpointsLoading || statsLoading) {
     return (
       <div className="flex flex-col gap-6">
         <div className="grid gap-4 md:grid-cols-4">
@@ -197,9 +187,9 @@ export default function DashboardOverviewPage() {
             <CheckCircle className="size-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">100%</div>
+            <div className="text-2xl font-bold">{stats.successRate}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              All forwarding routes healthy
+              {stats.successRate >= 95 ? "All forwarding routes healthy" : "Some routes experiencing issues"}
             </p>
           </CardContent>
         </Card>
@@ -207,12 +197,12 @@ export default function DashboardOverviewPage() {
         <Card className="border-border/50 bg-card/60 backdrop-blur-sm shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Schema Drift Alerts</CardTitle>
-            <ShieldAlert className="size-4 text-amber-500" />
+            <ShieldAlert className={stats.driftAlertsCount > 0 ? "size-4 text-amber-500 animate-pulse" : "size-4 text-muted-foreground"} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{stats.driftAlertsCount}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              No anomalies detected
+              {stats.driftAlertsCount > 0 ? `${stats.driftAlertsCount} anomalies detected` : "No anomalies detected"}
             </p>
           </CardContent>
         </Card>

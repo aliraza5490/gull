@@ -194,3 +194,20 @@ class SessionShareRead(SQLModel):
     token: str
     expires_at: datetime
     created_at: datetime
+
+
+# ── Workspace Stats Schemas ────────────────────────────────
+class HourlyTraffic(SQLModel):
+    hour: str
+    requests: int
+
+
+class WorkspaceStatsRead(SQLModel):
+    total_endpoints: int
+    active_endpoints: int
+    paused_endpoints: int
+    temp_endpoints: int
+    success_rate: float
+    drift_alerts_count: int
+    traffic_chart: list[HourlyTraffic]
+
