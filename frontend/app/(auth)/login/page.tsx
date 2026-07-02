@@ -43,7 +43,7 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       toast.success('Welcome back!');
       router.push('/dashboard');
     } catch (error: any) {
@@ -123,8 +123,8 @@ export default function LoginPage() {
             <Checkbox
               id="remember"
               checked={rememberMe}
-              onChange={(e) =>
-                setRememberMe((e.target as HTMLInputElement).checked)
+              onCheckedChange={(checked) =>
+                setRememberMe(checked === true)
               }
               disabled={isLoading}
             />

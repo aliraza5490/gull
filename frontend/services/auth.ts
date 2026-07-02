@@ -26,36 +26,11 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-// ── Local Storage Helpers ────────────────────────────────────
+// ── Local Storage & Session Storage Helpers ──────────────────
 
-const TOKEN_KEY = 'token';
-const USER_KEY = 'user';
+import { getStoredToken, getStoredUser, storeAuth, clearAuth } from './storage';
+export { getStoredToken, getStoredUser, storeAuth, clearAuth };
 
-export function getStoredToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function getStoredUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null;
-  const raw = localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-export function storeAuth(token: string, user: AuthUser): void {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export function clearAuth(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-}
 
 // ── API Functions ────────────────────────────────────────────
 
@@ -77,12 +52,16 @@ export const authQueryKeys = {
   currentUser: () => ['auth', 'me'] as const,
 };
 
+export interface LoginVariables extends LoginRequest {
+  rememberMe?: boolean;
+}
+
 export function useLogin() {
   const queryClient = useQueryClient();
-  return useMutation<AuthResponse, Error, LoginRequest>({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      storeAuth(data.access_token, data.user);
+  return useMutation<AuthResponse, Error, LoginVariables>({
+    mutationFn: ({ email, password }) => loginUser({ email, password }),
+    onSuccess: (data, variables) => {
+      storeAuth(data.access_token, data.user, variables.rememberMe);
       queryClient.setQueryData(authQueryKeys.currentUser(), data.user);
     },
   });

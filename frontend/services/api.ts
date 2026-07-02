@@ -1,4 +1,7 @@
+import { getStoredToken, clearAuth } from './storage';
+
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api/v1';
+
 
 export class ApiError extends Error {
   status: number;
@@ -18,7 +21,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   
   // Attach token if present
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
@@ -36,8 +39,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   // Handle unauthorized responses by dispatching a global event
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      clearAuth();
       window.dispatchEvent(new Event('unauthorized'));
     }
   }
