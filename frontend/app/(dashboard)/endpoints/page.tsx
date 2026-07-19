@@ -1,12 +1,12 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { Eye, Radio, Plus, Power, ShieldCheck, Link2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Eye, Radio, Plus, ShieldCheck, Link2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { useWorkspace } from "@/app/(dashboard)/layout"
-import { useEndpoints, useUpdateEndpoint, useDeleteEndpoint } from "@/services/webhook"
+import { useEndpoints, useUpdateEndpoint } from "@/services/webhook"
 import { CreateEndpointDialog } from "@/components/endpoints/create-endpoint-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,9 +18,10 @@ import { EmptyState } from "@/components/empty-state"
 import { getReceiverUrl } from "@/lib/utils"
 
 export default function EndpointsListPage() {
+  const router = useRouter()
   const { activeWorkspaceId } = useWorkspace()
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
-  const [page, setPage] = React.useState(1)
+  const [page] = React.useState(1)
 
   const { data: endpointsResponse, isLoading } = useEndpoints(
     activeWorkspaceId || undefined,
@@ -29,13 +30,10 @@ export default function EndpointsListPage() {
   )
 
   const updateEndpointMutation = useUpdateEndpoint()
-  const deleteEndpointMutation = useDeleteEndpoint()
 
   const endpoints = React.useMemo(() => {
     return endpointsResponse?.items || []
   }, [endpointsResponse])
-
-  const total = endpointsResponse?.total || 0
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
@@ -44,8 +42,19 @@ export default function EndpointsListPage() {
         data: { is_active: !currentStatus },
       })
       toast.success(currentStatus ? "Endpoint paused" : "Endpoint activated")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update status")
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || "Failed to update status")
+    }
+  }
+
+  const handleCopyLink = async (e: React.MouseEvent, slug: string) => {
+    e.stopPropagation()
+    const url = getReceiverUrl(slug)
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success("Link copied to clipboard")
+    } catch {
+      toast.error("Failed to copy link")
     }
   }
 
@@ -112,15 +121,24 @@ export default function EndpointsListPage() {
               </TableHeader>
               <TableBody>
                 {endpoints.map((endpoint) => (
-                  <TableRow key={endpoint.id}>
+                  <TableRow
+                    key={endpoint.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => router.push(`/endpoints/${endpoint.id}`)}
+                  >
                     <TableCell className="font-semibold py-4">
                       {endpoint.name}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
-                      <div className="flex items-center gap-2 max-w-[250px] sm:max-w-sm truncate text-muted-foreground hover:text-foreground transition-colors group select-all">
-                        <Link2 className="size-3.5 shrink-0 opacity-50" />
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyLink(e, endpoint.slug)}
+                        className="flex items-center gap-2 max-w-[250px] sm:max-w-sm truncate text-cyan-400 hover:text-cyan-300 underline underline-offset-4 transition-colors group text-left cursor-pointer"
+                        title="Click to copy link"
+                      >
+                        <Link2 className="size-3.5 shrink-0 opacity-70 group-hover:opacity-100" />
                         <span className="truncate">{getReceiverUrl(endpoint.slug)}</span>
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <Badge variant={endpoint.type === "temporary" ? "secondary" : "default"}>
@@ -140,7 +158,10 @@ export default function EndpointsListPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center">
+                      <div
+                        className="flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Switch
                           checked={endpoint.is_active}
                           onCheckedChange={() => handleToggleActive(endpoint.id, endpoint.is_active)}
@@ -148,11 +169,16 @@ export default function EndpointsListPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/endpoints/${endpoint.id}`}>
-                          <Eye className="size-4 text-muted-foreground hover:text-foreground" />
-                          <span className="sr-only">Inspect endpoint</span>
-                        </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/endpoints/${endpoint.id}`)
+                        }}
+                      >
+                        <Eye className="size-4 text-muted-foreground hover:text-foreground" />
+                        <span className="sr-only">Inspect endpoint</span>
                       </Button>
                     </TableCell>
                   </TableRow>
