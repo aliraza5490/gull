@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/empty-state"
+import { getReceiverUrl } from "@/lib/utils"
 
 export default function EndpointsListPage() {
   const { activeWorkspaceId } = useWorkspace()
@@ -48,12 +49,6 @@ export default function EndpointsListPage() {
     }
   }
 
-  // Calculate receiver path
-  const getReceiverUrl = (slug: string) => {
-    if (typeof window === "undefined") return `/api/v1/receiver/${slug}`
-    const origin = window.location.origin.replace("3000", "8000") // route to backend receiver
-    return `${origin}/api/v1/receiver/${slug}`
-  }
 
   if (isLoading) {
     return (

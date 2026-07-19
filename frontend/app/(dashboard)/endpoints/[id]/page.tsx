@@ -47,6 +47,7 @@ import { DestinationForm } from "@/components/endpoints/destination-form"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { DiffModal } from "@/components/endpoints/diff-modal"
 import { CopyButton } from "@/components/copy-button"
+import { getReceiverUrl } from "@/lib/utils"
 
 export default function EndpointDetailPage() {
   const params = useParams()
@@ -89,13 +90,6 @@ export default function EndpointDetailPage() {
   // Share Hook
   const createShareMutation = useCreateShare(endpointId)
 
-  // Ingestion Inbound Influx target URL mapping
-  const getReceiverUrl = (slug?: string) => {
-    if (!slug) return ""
-    if (typeof window === "undefined") return `/api/v1/receiver/${slug}`
-    const origin = window.location.origin.replace("3000", "8000") // backend route
-    return `${origin}/api/v1/receiver/${slug}`
-  }
 
   const handleDeleteDestination = async (destId: string) => {
     if (!confirm("Are you sure you want to delete this forwarding destination?")) return

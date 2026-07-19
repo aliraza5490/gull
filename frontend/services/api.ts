@@ -1,6 +1,8 @@
 import { getStoredToken, clearAuth } from './storage';
+import { getApiBaseUrl } from '@/lib/utils';
 
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api/v1';
+const BASE_URL = `${getApiBaseUrl()}/api/v1`;
+
 
 
 export class ApiError extends Error {

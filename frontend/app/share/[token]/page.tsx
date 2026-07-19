@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/empty-state"
 import { PayloadInspector } from "@/components/endpoints/payload-inspector"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CopyButton } from "@/components/copy-button"
+import { getReceiverUrl } from "@/lib/utils"
 
 export default function PublicShareInspectionPage() {
   const params = useParams()
@@ -47,13 +48,6 @@ export default function PublicShareInspectionPage() {
     return payloadsResponse?.items || []
   }, [payloadsResponse])
 
-  // Ingestion Inbound URL target format
-  const getReceiverUrl = (slug?: string) => {
-    if (!slug) return ""
-    if (typeof window === "undefined") return `/api/v1/receiver/${slug}`
-    const origin = window.location.origin.replace("3000", "8000")
-    return `${origin}/api/v1/receiver/${slug}`
-  }
 
   if (endpointLoading) {
     return (
