@@ -377,6 +377,7 @@ export default function EndpointDetailPage() {
       {/* Modals & Inspectors */}
       <PayloadInspector
         payload={selectedPayload}
+        endpoint={endpoint}
         open={isInspectorOpen}
         onOpenChange={setIsInspectorOpen}
       />

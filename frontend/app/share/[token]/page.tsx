@@ -194,6 +194,7 @@ export default function PublicShareInspectionPage() {
 
       <PayloadInspector
         payload={selectedPayload}
+        endpoint={endpoint}
         open={isInspectorOpen}
         onOpenChange={setIsInspectorOpen}
       />

@@ -465,6 +465,7 @@ export default function TrafficLogsPage() {
       {/* Payload Inspector Slide-Over Sheet */}
       <PayloadInspector
         payload={selectedPayload}
+        endpoint={selectedPayload ? endpointsMap.get(selectedPayload.endpoint_id) || null : null}
         open={isInspectorOpen}
         onOpenChange={setIsInspectorOpen}
       />

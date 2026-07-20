@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { Play, Loader2, ArrowRight } from "lucide-react"
+import { Play, Loader2, Globe, Clock } from "lucide-react"
 
 import {
   Sheet,
@@ -13,9 +13,12 @@ import {
 } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { JSONViewer } from "@/components/json-viewer"
-import { useReplayPayload } from "@/services/webhook"
+import { CopyButton } from "@/components/copy-button"
+import { getReceiverUrl } from "@/lib/utils"
+import { useReplayPayload, useEndpoints, ReceiverEndpoint } from "@/services/webhook"
 
 interface Payload {
   id: string
@@ -34,18 +37,34 @@ interface PayloadInspectorProps {
   payload: Payload | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  endpoint?: ReceiverEndpoint | null
 }
 
 export function PayloadInspector({
   payload,
   open,
   onOpenChange,
+  endpoint: initialEndpoint,
 }: PayloadInspectorProps) {
   const [activeTab, setActiveTab] = React.useState("body")
   const [customBody, setCustomBody] = React.useState("")
   const [isReplaying, setIsReplaying] = React.useState(false)
 
   const replayMutation = useReplayPayload(payload?.endpoint_id || "")
+
+  const { data: endpointsResponse } = useEndpoints()
+  const endpoint = React.useMemo(() => {
+    if (initialEndpoint) return initialEndpoint
+    if (!payload?.endpoint_id || !endpointsResponse?.items) return null
+    return (
+      endpointsResponse.items.find(
+        (e) => String(e.id) === String(payload.endpoint_id)
+      ) || null
+    )
+  }, [initialEndpoint, payload, endpointsResponse])
+
+  const endpointName = endpoint?.name || (payload?.endpoint_id ? `Endpoint #${payload.endpoint_id}` : "Payload Inspector")
+  const endpointUrl = getReceiverUrl(endpoint?.slug || payload?.endpoint_id)
 
   // Reset custom body when payload changes
   React.useEffect(() => {
@@ -75,15 +94,28 @@ export function PayloadInspector({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl font-sans flex flex-col h-full p-6 gap-5 overflow-y-auto bg-card border-l border-border/60">
-        <SheetHeader className="p-0 pb-4 border-b border-border/40 gap-1.5">
-          <div className="flex items-center justify-between pr-8">
-            <SheetTitle className="text-base font-bold font-mono text-foreground truncate max-w-[320px]">
-              {payload.id}
-            </SheetTitle>
+        <SheetHeader className="p-0 pt-10 pb-4 border-b border-border/40 gap-2.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <SheetTitle className="text-base font-bold text-foreground truncate">
+                {endpointName}
+              </SheetTitle>
+              <Badge variant="outline" className="font-mono text-[10px] shrink-0 bg-muted/40 text-muted-foreground border-border/60">
+                Event #{payload.id}
+              </Badge>
+            </div>
+            {endpointUrl && (
+              <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/40 max-w-full">
+                <Globe className="size-3.5 shrink-0 text-primary" />
+                <span className="truncate select-all text-foreground/90 font-medium">{endpointUrl}</span>
+                <CopyButton value={endpointUrl} className="size-5 shrink-0 ml-auto" />
+              </div>
+            )}
+            <SheetDescription className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+              <Clock className="size-3 text-muted-foreground/70" />
+              Captured {new Date(payload.received_at).toLocaleString()}
+            </SheetDescription>
           </div>
-          <SheetDescription className="text-xs text-muted-foreground font-mono">
-            Captured {new Date(payload.received_at).toLocaleString()}
-          </SheetDescription>
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 gap-4">
@@ -141,18 +173,6 @@ export function PayloadInspector({
 
           {/* Custom Replay panel */}
           <TabsContent value="replay" className="flex-1 flex flex-col gap-4 mt-0">
-            <div className="flex flex-col gap-2 flex-1 min-h-0">
-              <span className="text-xs font-semibold text-muted-foreground">
-                Edit Request Body
-              </span>
-              <Textarea
-                className="font-mono text-xs flex-1 min-h-[250px] bg-muted/10 border-border/60 p-3"
-                value={customBody}
-                onChange={(e) => setCustomBody(e.target.value)}
-                disabled={isReplaying}
-              />
-            </div>
-
             <Button
               className="w-full primary-gradient-btn border-0 shrink-0"
               onClick={handleReplay}
@@ -165,6 +185,18 @@ export function PayloadInspector({
               )}
               Replay Ingestion Log
             </Button>
+
+            <div className="flex flex-col gap-2 flex-1 min-h-0">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Edit Request Body
+              </span>
+              <Textarea
+                className="font-mono text-xs flex-1 min-h-[250px] bg-muted/10 border-border/60 p-3"
+                value={customBody}
+                onChange={(e) => setCustomBody(e.target.value)}
+                disabled={isReplaying}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </SheetContent>
