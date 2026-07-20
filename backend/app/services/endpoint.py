@@ -55,10 +55,16 @@ def get_endpoint(*, session: Session, endpoint_id: int) -> Optional[ReceiverEndp
     return session.get(ReceiverEndpoint, endpoint_id)
 
 
+def _to_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def get_endpoint_by_slug(*, session: Session, slug: str) -> Optional[ReceiverEndpoint]:
     stmt = select(ReceiverEndpoint).where(ReceiverEndpoint.slug == slug)
     endpoint = session.exec(stmt).first()
-    if endpoint and endpoint.expires_at and endpoint.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if endpoint and endpoint.expires_at and _to_utc(endpoint.expires_at) < datetime.now(timezone.utc):
         # Handle expired temporary endpoint: mark inactive or delete
         endpoint.is_active = False
         session.add(endpoint)
@@ -180,7 +186,7 @@ def create_share(
 def get_share_by_token(*, session: Session, token: str) -> Optional[SessionShare]:
     stmt = select(SessionShare).where(SessionShare.token == token)
     share = session.exec(stmt).first()
-    if share and share.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if share and _to_utc(share.expires_at) < datetime.now(timezone.utc):
         # Cleanup expired share link
         session.delete(share)
         session.commit()

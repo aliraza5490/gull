@@ -34,6 +34,7 @@ export function CreateEndpointDialog({
   const [slug, setSlug] = React.useState("")
   const [type, setType] = React.useState<"persistent" | "temporary">("persistent")
   const [secret, setSecret] = React.useState("")
+  const [durationHours, setDurationHours] = React.useState<number>(24)
   
   const isSlugModified = React.useRef(true)
 
@@ -44,6 +45,7 @@ export function CreateEndpointDialog({
       setSlug("ep-" + Math.random().toString(36).substring(2, 10))
       setSecret("")
       setType("persistent")
+      setDurationHours(24)
       isSlugModified.current = true
     }
   }, [open])
@@ -77,18 +79,27 @@ export function CreateEndpointDialog({
       return
     }
 
+    let expiresAtIso: string | undefined = undefined
+    if (type === "temporary") {
+      const expDate = new Date()
+      expDate.setTime(expDate.getTime() + durationHours * 60 * 60 * 1000)
+      expiresAtIso = expDate.toISOString()
+    }
+
     try {
       await createEndpointMutation.mutateAsync({
         name: name.trim(),
         slug: slug.trim(),
         type,
         secret: secret.trim() || undefined,
+        expires_at: expiresAtIso,
       })
       toast.success("Webhook endpoint created successfully")
       setName("")
       setSlug("")
       setSecret("")
       setType("persistent")
+      setDurationHours(24)
       isSlugModified.current = false
       onOpenChange(false)
     } catch (err: any) {
@@ -187,6 +198,47 @@ export function CreateEndpointDialog({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {type === "temporary" && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="duration">Expiration Time</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild disabled={createEndpointMutation.isPending}>
+                  <Button
+                    id="duration"
+                    variant="outline"
+                    className="w-full justify-between font-normal bg-background border-input"
+                  >
+                    {durationHours === 1
+                      ? "1 Hour"
+                      : durationHours === 24
+                      ? "24 Hours (Default)"
+                      : durationHours === 168
+                      ? "7 Days"
+                      : durationHours === 720
+                      ? "30 Days"
+                      : `${durationHours} Hours`}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                  {[
+                    { hours: 1, label: "1 Hour" },
+                    { hours: 24, label: "24 Hours (Default)" },
+                    { hours: 168, label: "7 Days" },
+                    { hours: 720, label: "30 Days" },
+                  ].map((item) => (
+                    <DropdownMenuItem key={item.hours} onClick={() => setDurationHours(item.hours)}>
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-[10px] text-muted-foreground leading-normal">
+                Temporary endpoint will automatically deactivate after this period.
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="secret">Verification Secret (Optional)</Label>

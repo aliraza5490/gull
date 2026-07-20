@@ -213,7 +213,7 @@ export default function SettingsPage() {
                     <span>Active Workspace ID: {activeWorkspaceId || "N/A"}</span>
                   </div>
                 </CardContent>
-                <CardFooter className="justify-end border-t border-border/30 pt-4">
+                <CardFooter className="justify-end border-t border-border/30 mt-6 pt-4">
                   <Button type="submit" disabled={isUpdatingWorkspace} className="primary-gradient-btn border-0">
                     {isUpdatingWorkspace && <Loader2 className="size-4 animate-spin mr-1.5" />}
                     Save Changes
@@ -268,7 +268,7 @@ export default function SettingsPage() {
                     </Select>
                   </div>
                 </CardContent>
-                <CardFooter className="justify-end border-t border-border/30 pt-4">
+                <CardFooter className="justify-end border-t border-border/30 mt-6 pt-4">
                   <Button type="submit" disabled={isInviting} className="primary-gradient-btn border-0">
                     {isInviting && <Loader2 className="size-4 animate-spin mr-1.5" />}
                     Send Invite
@@ -430,7 +430,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="justify-end border-t border-border/30 pt-4">
+              <CardFooter className="justify-end border-t border-border/30 mt-6 pt-4">
                 <Button type="submit" disabled={isSavingDefaults} className="primary-gradient-btn border-0">
                   {isSavingDefaults && <Loader2 className="size-4 animate-spin mr-1.5" />}
                   Save Defaults
@@ -463,8 +463,8 @@ export default function SettingsPage() {
                   <span className="text-muted-foreground">Payment Status</span>
                   <span className="text-emerald-500 font-medium">Paid (Auto-pay active)</span>
                 </div>
-              </CardContent>
-              <CardFooter className="pt-2 border-t border-border/30">
+                </CardContent>
+              <CardFooter className="mt-6 pt-4 border-t border-border/30">
                 <Button variant="outline" className="w-full text-xs font-sans">
                   Change Subscription Plan
                 </Button>

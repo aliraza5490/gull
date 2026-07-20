@@ -19,8 +19,10 @@ import {
   AlertTriangle,
   Link2,
   ChevronDown,
+  Clock,
 } from "lucide-react"
 import { toast } from "sonner"
+import { formatExpiryInfo } from "@/lib/utils"
 
 import {
   useEndpoints,
@@ -173,11 +175,21 @@ export default function EndpointDetailPage() {
             <ArrowLeft className="size-4" />
           </Button>
           <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{endpoint.name}</h1>
               <Badge variant={endpoint.type === "temporary" ? "secondary" : "default"}>
                 {endpoint.type}
               </Badge>
+              {endpoint.type === "temporary" && endpoint.expires_at && (
+                <Badge
+                  variant={formatExpiryInfo(endpoint.expires_at).isExpired ? "destructive" : "outline"}
+                  className="flex items-center gap-1 font-mono text-xs"
+                  title={formatExpiryInfo(endpoint.expires_at).formattedDate}
+                >
+                  <Clock className="size-3 text-amber-500 shrink-0" />
+                  {formatExpiryInfo(endpoint.expires_at).text}
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground font-mono truncate max-w-[300px] sm:max-w-md">
               {endpoint.id}
@@ -242,6 +254,12 @@ export default function EndpointDetailPage() {
                 <div className="flex items-center justify-between border-b pb-2 last:border-0">
                   <span className="text-muted-foreground">Status</span>
                   <span className="font-medium">{endpoint.is_active ? "Active" : "Paused"}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2 last:border-0">
+                  <span className="text-muted-foreground">Expires At</span>
+                  <span className="font-medium text-xs font-mono">
+                    {formatExpiryInfo(endpoint.expires_at).formattedDate}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2 last:border-0">
                   <span className="text-muted-foreground">Created</span>

@@ -22,6 +22,7 @@ export interface ReceiverEndpointCreate {
   type: 'temporary' | 'persistent';
   secret?: string;
   is_active?: boolean;
+  expires_at?: string;
 }
 
 export interface ReceiverEndpointUpdate {
@@ -29,6 +30,7 @@ export interface ReceiverEndpointUpdate {
   slug?: string;
   secret?: string | null;
   is_active?: boolean;
+  expires_at?: string | null;
 }
 
 export interface Destination {

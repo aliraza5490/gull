@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Eye, Radio, Plus, ShieldCheck, Link2 } from "lucide-react"
+import { Eye, Radio, Plus, ShieldCheck, Link2, Clock } from "lucide-react"
 import { toast } from "sonner"
 
 import { useWorkspace } from "@/app/(dashboard)/layout"
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/empty-state"
-import { getReceiverUrl } from "@/lib/utils"
+import { getReceiverUrl, formatExpiryInfo } from "@/lib/utils"
 
 export default function EndpointsListPage() {
   const router = useRouter()
@@ -141,9 +141,29 @@ export default function EndpointsListPage() {
                       </button>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={endpoint.type === "temporary" ? "secondary" : "default"}>
-                        {endpoint.type}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant={endpoint.type === "temporary" ? "secondary" : "default"}>
+                            {endpoint.type}
+                          </Badge>
+                          {endpoint.type === "temporary" && formatExpiryInfo(endpoint.expires_at).isExpired && (
+                            <Badge variant="destructive" className="text-[10px] py-0 px-1.5 h-4">
+                              Expired
+                            </Badge>
+                          )}
+                        </div>
+                        {endpoint.type === "temporary" && endpoint.expires_at && (
+                          <div
+                            className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground"
+                            title={formatExpiryInfo(endpoint.expires_at).formattedDate}
+                          >
+                            <Clock className="size-3 text-amber-500 shrink-0" />
+                            <span className={formatExpiryInfo(endpoint.expires_at).isExpired ? "text-destructive" : ""}>
+                              {formatExpiryInfo(endpoint.expires_at).text}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
