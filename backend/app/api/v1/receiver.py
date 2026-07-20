@@ -5,8 +5,10 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Request, HTTPException, Depends, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.deps import SessionDep
 from app.core.database import get_session
 from app.services import endpoint as endpoint_service
@@ -164,9 +166,29 @@ async def handle_incoming_webhook(
     return {"status": "received", "payload_id": payload.id, "is_drifted": is_drifted}
 
 
-# ── Ingestion Handlers (Any HTTP Method) ──────────────────────
+async def handle_get_redirect(
+    slug: str,
+    session: Session,
+) -> RedirectResponse:
+    """Redirect GET requests to the dashboard's endpoint detail page."""
+    endpoint = endpoint_service.get_endpoint_by_slug(session=session, slug=slug)
+    frontend_url = settings.CORS_ORIGINS[0].rstrip("/") if settings.CORS_ORIGINS else "http://localhost:3000"
+    if not endpoint:
+        return RedirectResponse(url=f"{frontend_url}/endpoints", status_code=307)
+    return RedirectResponse(url=f"{frontend_url}/endpoints/{endpoint.id}", status_code=307)
 
-@router.api_route("/t/{slug}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+
+# ── Webhook Route Handlers (GET -> Redirect, POST -> Ingest) ──
+
+@router.get("/t/{slug}")
+async def redirect_temporary_webhook(
+    slug: str,
+    session: SessionDep,
+):
+    return await handle_get_redirect(slug=slug, session=session)
+
+
+@router.post("/t/{slug}")
 async def receive_temporary_webhook(
     slug: str,
     request: Request,
@@ -181,7 +203,15 @@ async def receive_temporary_webhook(
     )
 
 
-@router.api_route("/w/{slug}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+@router.get("/w/{slug}")
+async def redirect_persistent_webhook(
+    slug: str,
+    session: SessionDep,
+):
+    return await handle_get_redirect(slug=slug, session=session)
+
+
+@router.post("/w/{slug}")
 async def receive_persistent_webhook(
     slug: str,
     request: Request,
@@ -196,7 +226,15 @@ async def receive_persistent_webhook(
     )
 
 
-@router.api_route("/api/v1/receiver/{slug}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+@router.get("/api/v1/receiver/{slug}")
+async def redirect_webhook_by_slug(
+    slug: str,
+    session: SessionDep,
+):
+    return await handle_get_redirect(slug=slug, session=session)
+
+
+@router.post("/api/v1/receiver/{slug}")
 async def receive_webhook_by_slug(
     slug: str,
     request: Request,
