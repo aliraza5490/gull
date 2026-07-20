@@ -37,7 +37,17 @@ export function formatExpiryInfo(expiresAt?: string | null): ExpiryInfo {
     };
   }
 
-  const expDate = new Date(expiresAt);
+  // Normalize ISO datetime string to UTC if timezone suffix is missing
+  let normalizedStr = String(expiresAt).trim();
+  if (
+    normalizedStr &&
+    !normalizedStr.endsWith("Z") &&
+    !/[+-]\d{2}:?\d{2}$/.test(normalizedStr)
+  ) {
+    normalizedStr = normalizedStr.replace(" ", "T") + "Z";
+  }
+
+  const expDate = new Date(normalizedStr);
   if (isNaN(expDate.getTime())) {
     return { isExpired: false, text: "Invalid date", formattedDate: "Invalid date" };
   }
@@ -80,4 +90,36 @@ export function formatExpiryInfo(expiresAt?: string | null): ExpiryInfo {
     formattedDate: `${formattedDate} (${relativeText})`,
   };
 }
+
+export function formatRelativeTime(dateStr?: string | null): string {
+  if (!dateStr) return "N/A";
+
+  let normalizedStr = String(dateStr).trim();
+  if (
+    normalizedStr &&
+    !normalizedStr.endsWith("Z") &&
+    !/[+-]\d{2}:?\d{2}$/.test(normalizedStr)
+  ) {
+    normalizedStr = normalizedStr.replace(" ", "T") + "Z";
+  }
+
+  const date = new Date(normalizedStr);
+  if (isNaN(date.getTime())) return "N/A";
+
+  const now = new Date();
+  const diffSecs = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffSecs < 10) return "Just now";
+  if (diffSecs < 60) return `${diffSecs}s ago`;
+
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 

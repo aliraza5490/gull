@@ -146,7 +146,14 @@ export default function PublicShareInspectionPage() {
                 </TableHeader>
                 <TableBody>
                   {payloads.map((payload) => (
-                    <TableRow key={payload.id}>
+                    <TableRow
+                      key={payload.id}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      onClick={() => {
+                        setSelectedPayload(payload)
+                        setIsInspectorOpen(true)
+                      }}
+                    >
                       <TableCell className="font-mono text-xs text-muted-foreground select-all">
                         {payload.id}
                       </TableCell>
@@ -164,7 +171,7 @@ export default function PublicShareInspectionPage() {
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(payload.received_at).toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="sm"

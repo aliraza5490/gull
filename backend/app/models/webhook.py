@@ -89,7 +89,7 @@ class Destination(SQLModel, table=True):
     __tablename__ = "destinations"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", ondelete="CASCADE", index=True)
     name: str = Field(max_length=255)
     url: str = Field(max_length=2048)
     method: str = Field(default="POST", max_length=10)
@@ -111,7 +111,7 @@ class WebhookPayload(SQLModel, table=True):
     __tablename__ = "webhook_payloads"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", ondelete="CASCADE", index=True)
     method: str = Field(max_length=10)
     headers: dict = Field(default_factory=dict, sa_column=Column(JSON))
     query_params: dict = Field(default_factory=dict, sa_column=Column(JSON))
@@ -130,8 +130,8 @@ class WebhookDelivery(SQLModel, table=True):
     __tablename__ = "webhook_deliveries"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    payload_id: int = Field(foreign_key="webhook_payloads.id", index=True)
-    destination_id: int = Field(foreign_key="destinations.id", index=True)
+    payload_id: int = Field(foreign_key="webhook_payloads.id", ondelete="CASCADE", index=True)
+    destination_id: int = Field(foreign_key="destinations.id", ondelete="CASCADE", index=True)
     attempt: int = Field(default=1)
     status_code: Optional[int] = Field(default=None)
     response_body: Optional[str] = Field(default=None)
@@ -149,8 +149,8 @@ class SchemaDriftAlert(SQLModel, table=True):
     __tablename__ = "schema_drift_alerts"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
-    payload_id: int = Field(foreign_key="webhook_payloads.id", index=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", ondelete="CASCADE", index=True)
+    payload_id: int = Field(foreign_key="webhook_payloads.id", ondelete="CASCADE", index=True)
     message: str = Field(max_length=1024)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -163,7 +163,7 @@ class SessionShare(SQLModel, table=True):
     __tablename__ = "session_shares"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", index=True)
+    endpoint_id: int = Field(foreign_key="receiver_endpoints.id", ondelete="CASCADE", index=True)
     token: str = Field(unique=True, index=True, max_length=255)
     expires_at: datetime = Field()
     created_at: datetime = Field(

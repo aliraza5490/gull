@@ -10,14 +10,20 @@ import { Button } from "@/components/ui/button"
 interface CopyButtonProps extends React.ComponentProps<typeof Button> {
   value: string
   successMessage?: string
+  showText?: boolean
+  idleText?: string
+  copiedText?: string
 }
 
 export function CopyButton({
   value,
   successMessage = "Copied to clipboard!",
+  showText = false,
+  idleText = "Copy",
+  copiedText = "Copied ✓",
   className,
   variant = "ghost",
-  size = "icon",
+  size,
   ...props
 }: CopyButtonProps) {
   const [hasCopied, setHasCopied] = React.useState(false)
@@ -43,20 +49,44 @@ export function CopyButton({
     [value, successMessage]
   )
 
+  const buttonSize = size || (showText ? "sm" : "icon")
+
   return (
     <Button
       variant={variant}
-      size={size}
-      className={cn("relative z-10 size-6 shrink-0 rounded-md", className)}
+      size={buttonSize}
+      className={cn(
+        "relative z-10 shrink-0 transition-all duration-200",
+        !showText && "size-6 rounded-md",
+        hasCopied && showText && "border-emerald-500/40 bg-emerald-500/10 text-emerald-500",
+        className
+      )}
       onClick={handleCopy}
       {...props}
     >
-      {hasCopied ? (
-        <Check className="size-3.5 text-emerald-500" />
+      {showText ? (
+        hasCopied ? (
+          <span className="flex items-center gap-1.5 font-medium text-emerald-500 animate-in fade-in-50 duration-200">
+            <Check className="size-3.5" />
+            {copiedText}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 font-medium">
+            <Copy className="size-3.5" />
+            {idleText}
+          </span>
+        )
       ) : (
-        <Copy className="size-3.5 text-muted-foreground" />
+        <>
+          {hasCopied ? (
+            <Check className="size-3.5 text-emerald-500 animate-in zoom-in-50 duration-150" />
+          ) : (
+            <Copy className="size-3.5 text-muted-foreground" />
+          )}
+          <span className="sr-only">Copy</span>
+        </>
       )}
-      <span className="sr-only">Copy</span>
     </Button>
   )
 }
+

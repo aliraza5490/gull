@@ -5,11 +5,14 @@ Endpoint service – DB operations for receiver endpoints, destinations, and ses
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Tuple
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, delete, func
 
 from app.models.webhook import (
     ReceiverEndpoint,
     Destination,
+    WebhookPayload,
+    WebhookDelivery,
+    SchemaDriftAlert,
     SessionShare,
     EndpointType,
 )
@@ -26,6 +29,9 @@ def create_endpoint(
     *, session: Session, workspace_id: int, data: ReceiverEndpointCreate
 ) -> ReceiverEndpoint:
     expires_at = data.expires_at
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
     if data.type == EndpointType.TEMPORARY and not expires_at:
         # Default temporary endpoint to expire in 24 hours
         expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
@@ -115,6 +121,27 @@ def update_endpoint(
 
 
 def delete_endpoint(*, session: Session, db_endpoint: ReceiverEndpoint) -> None:
+    endpoint_id = db_endpoint.id
+    if endpoint_id is not None:
+        # Delete schema drift alerts for this endpoint
+        session.exec(delete(SchemaDriftAlert).where(SchemaDriftAlert.endpoint_id == endpoint_id))
+
+        # Delete session shares for this endpoint
+        session.exec(delete(SessionShare).where(SessionShare.endpoint_id == endpoint_id))
+
+        # Collect child payload and destination IDs for delivery cleanup
+        payload_ids = list(session.exec(select(WebhookPayload.id).where(WebhookPayload.endpoint_id == endpoint_id)).all())
+        destination_ids = list(session.exec(select(Destination.id).where(Destination.endpoint_id == endpoint_id)).all())
+
+        if payload_ids:
+            session.exec(delete(WebhookDelivery).where(WebhookDelivery.payload_id.in_(payload_ids)))
+        if destination_ids:
+            session.exec(delete(WebhookDelivery).where(WebhookDelivery.destination_id.in_(destination_ids)))
+
+        # Delete payloads and destinations
+        session.exec(delete(WebhookPayload).where(WebhookPayload.endpoint_id == endpoint_id))
+        session.exec(delete(Destination).where(Destination.endpoint_id == endpoint_id))
+
     session.delete(db_endpoint)
     session.commit()
 

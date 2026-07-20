@@ -2,54 +2,39 @@
 
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  Radio,
-  Play,
-  Copy,
-  Plus,
-  RefreshCw,
-  Trash,
-  CheckCircle,
-  XCircle,
-  ExternalLink,
-  ShieldCheck,
-  Code2,
-  Calendar,
-  AlertTriangle,
-  Link2,
-  ChevronDown,
-  Clock,
-} from "lucide-react"
+import { ArrowLeft, Clock, AlertTriangle, Pause, Play, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-import { formatExpiryInfo } from "@/lib/utils"
+import { formatExpiryInfo, getReceiverUrl, cn } from "@/lib/utils"
 
 import {
   useEndpoints,
+  useUpdateEndpoint,
+  useDeleteEndpoint,
   useDestinations,
-  useCreateDestination,
-  useUpdateDestination,
   useDeleteDestination,
   usePayloads,
-  useDeliveries,
-  useReplayPayload,
   useDriftAlerts,
   useCreateShare,
+  WebhookPayload,
+  Destination,
 } from "@/services/webhook"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/empty-state"
 import { PayloadInspector } from "@/components/endpoints/payload-inspector"
 import { DestinationForm } from "@/components/endpoints/destination-form"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { DiffModal } from "@/components/endpoints/diff-modal"
-import { CopyButton } from "@/components/copy-button"
-import { getReceiverUrl } from "@/lib/utils"
+import { QrModal } from "@/components/endpoints/qr-modal"
+
+// Modular Tab Components
+import { OverviewTab } from "@/components/endpoints/overview-tab"
+import { PayloadsTab } from "@/components/endpoints/payloads-tab"
+import { DestinationsTab } from "@/components/endpoints/destinations-tab"
+import { DeliveriesTab } from "@/components/endpoints/deliveries-tab"
+import { AlertsTab } from "@/components/endpoints/alerts-tab"
+import { ShareTab } from "@/components/endpoints/share-tab"
 
 export default function EndpointDetailPage() {
   const params = useParams()
@@ -58,10 +43,11 @@ export default function EndpointDetailPage() {
 
   // State
   const [activeTab, setActiveTab] = React.useState("overview")
-  const [selectedPayload, setSelectedPayload] = React.useState<any | null>(null)
+  const [selectedPayload, setSelectedPayload] = React.useState<WebhookPayload | null>(null)
   const [isInspectorOpen, setIsInspectorOpen] = React.useState(false)
-  const [selectedDestination, setSelectedDestination] = React.useState<any | null>(null)
+  const [selectedDestination, setSelectedDestination] = React.useState<Destination | null>(null)
   const [isDestFormOpen, setIsDestFormOpen] = React.useState(false)
+  const [isQrOpen, setIsQrOpen] = React.useState(false)
   const [shareExpiration, setShareExpiration] = React.useState("3600")
   const [shareLink, setShareLink] = React.useState("")
 
@@ -75,13 +61,16 @@ export default function EndpointDetailPage() {
     return endpointsResponse?.items?.find((e) => String(e.id) === String(endpointId)) || null
   }, [endpointsResponse, endpointId])
 
+  // Endpoint mutation hooks
+  const updateEndpointMutation = useUpdateEndpoint()
+  const deleteEndpointMutation = useDeleteEndpoint()
+
   // Fetch Destinations
   const { data: destinations = [], isLoading: destLoading } = useDestinations(endpointId)
   const deleteDestMutation = useDeleteDestination(endpointId)
 
   // Fetch Payloads
-  const [payloadPage, setPayloadPage] = React.useState(1)
-  const { data: payloadsResponse, isLoading: payloadsLoading } = usePayloads(endpointId, payloadPage, 10)
+  const { data: payloadsResponse, isLoading: payloadsLoading } = usePayloads(endpointId, 1, 10)
   const payloads = React.useMemo(() => {
     return payloadsResponse?.items || []
   }, [payloadsResponse])
@@ -92,6 +81,53 @@ export default function EndpointDetailPage() {
   // Share Hook
   const createShareMutation = useCreateShare(endpointId)
 
+  // Handle Pause / Resume toggle
+  const handleToggleActive = async () => {
+    if (!endpoint) return
+    const newStatus = !endpoint.is_active
+    try {
+      await updateEndpointMutation.mutateAsync({
+        id: endpointId,
+        data: { is_active: newStatus },
+      })
+      toast.success(newStatus ? "Endpoint activated" : "Endpoint paused")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update endpoint status")
+    }
+  }
+
+  // Handle Delete endpoint
+  const handleDeleteEndpoint = async () => {
+    if (!endpoint) return
+    if (!confirm(`Are you sure you want to delete "${endpoint.name}"? This action cannot be undone.`)) return
+    try {
+      await deleteEndpointMutation.mutateAsync(endpointId)
+      toast.success("Endpoint deleted successfully")
+      router.push("/endpoints")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete endpoint")
+    }
+  }
+
+  // Generate dynamic chart timeline data strictly based on real payloads
+  const activityData = React.useMemo(() => {
+    const hours = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "Now"]
+    if (!payloads || payloads.length === 0) {
+      return hours.map((time) => ({ time, requests: 0 }))
+    }
+    const countsByHour: Record<string, number> = {}
+    payloads.forEach((p) => {
+      const date = new Date(p.received_at)
+      if (!isNaN(date.getTime())) {
+        const hourStr = `${String(date.getHours()).padStart(2, "0")}:00`
+        countsByHour[hourStr] = (countsByHour[hourStr] || 0) + 1
+      }
+    })
+    return hours.map((time) => ({
+      time,
+      requests: countsByHour[time] || (time === "Now" ? payloads.length : 0),
+    }))
+  }, [payloads])
 
   const handleDeleteDestination = async (destId: string) => {
     if (!confirm("Are you sure you want to delete this forwarding destination?")) return
@@ -166,45 +202,99 @@ export default function EndpointDetailPage() {
     )
   }
 
+  const receiverUrl = getReceiverUrl(endpoint.slug)
+  const expiryInfo = formatExpiryInfo(endpoint.expires_at)
+  const latestPayload = payloads[0] || null
+
   return (
     <div className="flex flex-col gap-6 font-sans">
       {/* Header controls & Back indicators */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/endpoints")}>
+          <Button variant="ghost" size="icon" onClick={() => router.push("/endpoints")} className="rounded-lg hover:bg-accent">
             <ArrowLeft className="size-4" />
           </Button>
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{endpoint.name}</h1>
-              <Badge variant={endpoint.type === "temporary" ? "secondary" : "default"}>
-                {endpoint.type}
-              </Badge>
-              {endpoint.type === "temporary" && endpoint.expires_at && (
+              
+              {/* Unified Temporary + Expiry Badge */}
+              {endpoint.type === "temporary" ? (
                 <Badge
-                  variant={formatExpiryInfo(endpoint.expires_at).isExpired ? "destructive" : "outline"}
-                  className="flex items-center gap-1 font-mono text-xs"
-                  title={formatExpiryInfo(endpoint.expires_at).formattedDate}
+                  variant={expiryInfo.isExpired ? "destructive" : "outline"}
+                  className="flex items-center gap-1.5 font-medium px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                  title={expiryInfo.formattedDate}
                 >
-                  <Clock className="size-3 text-amber-500 shrink-0" />
-                  {formatExpiryInfo(endpoint.expires_at).text}
+                  <Clock className="size-3.5 text-amber-500 shrink-0 animate-pulse" />
+                  <span>Temporary Endpoint • {expiryInfo.text}</span>
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="px-2.5 py-1 font-medium text-xs">
+                  Persistent Endpoint
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground font-mono truncate max-w-[300px] sm:max-w-md">
-              {endpoint.id}
-            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Badge variant={endpoint.is_active ? "outline" : "secondary"} className={endpoint.is_active ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : ""}>
-            {endpoint.is_active ? "Active" : "Paused"}
+
+        {/* Action Controls & Status Badge */}
+        <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+          <Badge
+            variant="outline"
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 font-semibold text-xs transition-all duration-300 mr-1",
+              endpoint.is_active
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                : "bg-muted text-muted-foreground border-border"
+            )}
+          >
+            {endpoint.is_active && (
+              <span className="relative flex size-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full size-2 bg-emerald-500" />
+              </span>
+            )}
+            <span>{endpoint.is_active ? "Active" : "Paused"}</span>
           </Badge>
+
+          {/* Pause / Resume Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs font-semibold px-3 border-border/70 hover:bg-accent"
+            onClick={handleToggleActive}
+            disabled={updateEndpointMutation.isPending}
+          >
+            {endpoint.is_active ? (
+              <>
+                <Pause className="size-3.5 mr-1.5 text-amber-500" />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play className="size-3.5 mr-1.5 text-emerald-500" />
+                Resume
+              </>
+            )}
+          </Button>
+
+          {/* Delete Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs font-semibold px-3 text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive/50"
+            onClick={handleDeleteEndpoint}
+            disabled={deleteEndpointMutation.isPending}
+          >
+            <Trash2 className="size-3.5 mr-1.5" />
+            Delete
+          </Button>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col gap-4">
-        <TabsList className="grid grid-cols-6 w-full max-w-2xl bg-muted/60 p-1 shrink-0 overflow-x-auto">
+      {/* Prominent Expanded Full-Width Tab Bar */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col gap-6">
+        <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 p-1.5 rounded-2xl bg-muted/40 border border-border/50 h-auto min-h-[52px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="payloads">Payloads</TabsTrigger>
           <TabsTrigger value="destinations">Destinations</TabsTrigger>
@@ -213,403 +303,78 @@ export default function EndpointDetailPage() {
           <TabsTrigger value="share">Share</TabsTrigger>
         </TabsList>
 
-        {/* 1. Overview Tab */}
+        {/* Tab Contents */}
         <TabsContent value="overview">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2 border-border/50 bg-card/60 shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Ingestion Endpoint URL</CardTitle>
-                <CardDescription>
-                  Send incoming webhook HTTP requests to this unique target endpoint destination.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2.5 font-mono text-xs overflow-x-auto">
-                  <Link2 className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 select-all truncate">{getReceiverUrl(endpoint.slug)}</span>
-                  <CopyButton value={getReceiverUrl(endpoint.slug)} size="sm" />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground">Verification Secret Key</span>
-                  <div className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2.5 font-mono text-xs">
-                    <ShieldCheck className="size-4 text-emerald-500 shrink-0" />
-                    <span className="flex-1 truncate">{endpoint.secret || "No authentication secret active"}</span>
-                    {endpoint.secret && <CopyButton value={endpoint.secret} size="sm" />}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-card/60 shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Metadata Summary</CardTitle>
-                <CardDescription>Target metadata details.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4 text-sm">
-                <div className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <span className="text-muted-foreground">Type</span>
-                  <span className="font-medium capitalize">{endpoint.type}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium">{endpoint.is_active ? "Active" : "Paused"}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <span className="text-muted-foreground">Expires At</span>
-                  <span className="font-medium text-xs font-mono">
-                    {formatExpiryInfo(endpoint.expires_at).formattedDate}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <span className="text-muted-foreground">Created</span>
-                  <span className="font-medium text-xs">
-                    {new Date(endpoint.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <OverviewTab
+            endpoint={endpoint}
+            receiverUrl={receiverUrl}
+            expiryInfo={expiryInfo}
+            payloads={payloads}
+            destinations={destinations}
+            driftAlerts={driftAlerts}
+            activityData={activityData}
+            latestPayload={latestPayload}
+            payloadsLoading={payloadsLoading}
+            destLoading={destLoading}
+            onOpenQr={() => setIsQrOpen(true)}
+            onOpenInspector={(p) => {
+              setSelectedPayload(p)
+              setIsInspectorOpen(true)
+            }}
+            onOpenDestForm={(d) => {
+              setSelectedDestination(d || null)
+              setIsDestFormOpen(true)
+            }}
+            onNavigateTab={setActiveTab}
+          />
         </TabsContent>
 
-        {/* 2. Payloads Tab */}
         <TabsContent value="payloads">
-          <Card className="border-border/50 bg-card/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base font-semibold">Ingested Inbound Payloads</CardTitle>
-                <CardDescription>Live traffic stream log detailing received webhook events.</CardDescription>
-              </div>
-              {diffSelection.length >= 2 && (
-                <Button className="primary-gradient-btn border-0" size="sm" onClick={handleTriggerDiff}>
-                  Compare Selected ({diffSelection.length})
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent className="p-0">
-              {payloadsLoading ? (
-                <div className="p-6 flex flex-col gap-3">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : payloads.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState
-                    icon={Radio}
-                    title="No traffic received"
-                    description="Trigger a POST request containing headers and body payload elements to your ingestion URL target."
-                  />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[60px] text-center">Select</TableHead>
-                      <TableHead>Event ID</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Drift Status</TableHead>
-                      <TableHead>Captured At</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payloads.map((payload) => (
-                      <TableRow key={payload.id} className={diffSelection.includes(String(payload.id)) ? "bg-primary/5 hover:bg-primary/10" : ""}>
-                        <TableCell className="text-center">
-                          <input
-                            type="checkbox"
-                            className="size-3.5 rounded border-muted accent-primary cursor-pointer"
-                            checked={diffSelection.includes(String(payload.id))}
-                            onChange={() => handleDiffSelect(String(payload.id))}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground select-all">
-                          {payload.id}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={payload.method === "POST" ? "default" : "secondary"}>
-                            {payload.method}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{payload.content_type || "N/A"}</TableCell>
-                        <TableCell>
-                          <Badge variant={payload.is_drifted ? "destructive" : "outline"} className={payload.is_drifted ? "" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"}>
-                            {payload.is_drifted ? "Drifted" : "Verified"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {new Date(payload.received_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPayload(payload)
-                              setIsInspectorOpen(true)
-                            }}
-                          >
-                            Inspect
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <PayloadsTab
+            payloads={payloads}
+            payloadsLoading={payloadsLoading}
+            diffSelection={diffSelection}
+            onDiffSelect={handleDiffSelect}
+            onTriggerDiff={handleTriggerDiff}
+            onInspectPayload={(p) => {
+              setSelectedPayload(p)
+              setIsInspectorOpen(true)
+            }}
+          />
         </TabsContent>
 
-        {/* 3. Destinations Tab */}
         <TabsContent value="destinations">
-          <Card className="border-border/50 bg-card/60 shadow-xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base font-semibold">Outbound Routing Targets</CardTitle>
-                <CardDescription>
-                  Forward ingested webhooks in parallel routes.
-                </CardDescription>
-              </div>
-              <Button
-                className="primary-gradient-btn border-0"
-                size="sm"
-                onClick={() => {
-                  setSelectedDestination(null)
-                  setIsDestFormOpen(true)
-                }}
-              >
-                <Plus className="size-4 mr-1.5" />
-                Add Route
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              {destLoading ? (
-                <div className="p-6 flex flex-col gap-3">
-                  {[...Array(2)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : destinations.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState
-                    icon={ExternalLink}
-                    title="No forwarding routes"
-                    description="Configure downstream target URLs and headers to begin fanning out webhook traffic."
-                    action={
-                      <Button
-                        className="primary-gradient-btn border-0"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedDestination(null)
-                          setIsDestFormOpen(true)
-                        }}
-                      >
-                        Add Route
-                      </Button>
-                    }
-                  />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead>Route Name</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Target URL</TableHead>
-                      <TableHead>Auth Type</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {destinations.map((dest) => (
-                      <TableRow key={dest.id}>
-                        <TableCell className="font-semibold">{dest.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{dest.method}</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs max-w-[200px] truncate text-muted-foreground">
-                          {dest.url}
-                        </TableCell>
-                        <TableCell className="text-xs">{dest.auth_type}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDestination(dest)
-                                setIsDestFormOpen(true)
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteDestination(dest.id)}
-                            >
-                              <Trash className="size-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <DestinationsTab
+            destinations={destinations}
+            destLoading={destLoading}
+            onOpenDestForm={(d) => {
+              setSelectedDestination(d || null)
+              setIsDestFormOpen(true)
+            }}
+            onDeleteDestination={handleDeleteDestination}
+          />
         </TabsContent>
 
-        {/* 4. Deliveries Tab */}
         <TabsContent value="deliveries">
-          <Card className="border-border/50 bg-card/60 shadow-xs">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Delivery Logs Audit Feed</CardTitle>
-              <CardDescription>Outcome status of outbound fan-out requests.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {payloads.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState
-                    icon={CheckCircle}
-                    title="No logs available"
-                    description="Audit logs are captured once ingested events are processed and forwarded downstream."
-                  />
-                </div>
-              ) : (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  Select individual payloads in the Payloads Tab to view their deliveries and re-request audits.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <DeliveriesTab payloads={payloads} />
         </TabsContent>
 
-        {/* 5. Alerts Tab */}
         <TabsContent value="alerts">
-          <Card className="border-border/50 bg-card/60 shadow-xs">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Schema Drift Alerts</CardTitle>
-              <CardDescription>
-                Anomaly logs tracking structural mutations relative to ingestion baseline shapes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {alertsLoading ? (
-                <div className="p-6 flex flex-col gap-3">
-                  {[...Array(2)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : driftAlerts.length === 0 ? (
-                <div className="p-6">
-                  <EmptyState
-                    icon={CheckCircle}
-                    title="All verified"
-                    description="No anomalies or schema mutations have been flagged on incoming logs."
-                  />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead>Alert ID</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Timestamp</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {driftAlerts.map((alert) => (
-                      <TableRow key={alert.id}>
-                        <TableCell className="font-mono text-xs text-muted-foreground select-all">
-                          {alert.id}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium text-destructive/95">
-                          {alert.message}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {new Date(alert.created_at).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <AlertsTab driftAlerts={driftAlerts} alertsLoading={alertsLoading} />
         </TabsContent>
 
-        {/* 6. Share Tab */}
         <TabsContent value="share">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2 border-border/50 bg-card/60 shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Generate Share Token</CardTitle>
-                <CardDescription>
-                  Generate time-boxed read-only URLs for external validation support teams.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground">Link Expiration Duration</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full sm:max-w-xs justify-between font-normal bg-background border-input"
-                      >
-                        {shareExpiration === "3600"
-                          ? "1 Hour"
-                          : shareExpiration === "86400"
-                          ? "1 Day"
-                          : shareExpiration === "604800"
-                          ? "1 Week"
-                          : "Select duration"}
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                      {[
-                        { value: "3600", label: "1 Hour" },
-                        { value: "86400", label: "1 Day" },
-                        { value: "604800", label: "1 Week" },
-                      ].map((item) => (
-                        <DropdownMenuItem key={item.value} onClick={() => setShareExpiration(item.value)}>
-                          {item.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <Button
-                  className="primary-gradient-btn border-0 self-start mt-2"
-                  onClick={handleGenerateShareLink}
-                  disabled={createShareMutation.isPending}
-                >
-                  {createShareMutation.isPending ? "Generating..." : "Create Link"}
-                </Button>
-
-                {shareLink && (
-                  <div className="flex flex-col gap-2 mt-4">
-                    <span className="text-xs font-semibold text-muted-foreground">Collaborator Share URL</span>
-                    <div className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2.5 font-mono text-xs overflow-x-auto">
-                      <Link2 className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate select-all">{shareLink}</span>
-                      <CopyButton value={shareLink} size="sm" />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <ShareTab
+            shareExpiration={shareExpiration}
+            onShareExpirationChange={setShareExpiration}
+            shareLink={shareLink}
+            onGenerateShareLink={handleGenerateShareLink}
+            isPending={createShareMutation.isPending}
+          />
         </TabsContent>
       </Tabs>
 
+      {/* Modals & Inspectors */}
       <PayloadInspector
         payload={selectedPayload}
         open={isInspectorOpen}
@@ -628,6 +393,13 @@ export default function EndpointDetailPage() {
         payloadB={diffPayloads.b}
         open={isDiffOpen}
         onOpenChange={setIsDiffOpen}
+      />
+
+      <QrModal
+        url={receiverUrl}
+        endpointName={endpoint.name}
+        open={isQrOpen}
+        onOpenChange={setIsQrOpen}
       />
     </div>
   )

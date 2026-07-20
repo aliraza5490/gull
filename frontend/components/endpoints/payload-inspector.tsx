@@ -74,28 +74,28 @@ export function PayloadInspector({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl font-sans flex flex-col h-full gap-4 overflow-y-auto">
-        <SheetHeader className="pb-2 border-b border-border/40">
-          <div className="flex items-center justify-between mt-4">
-            <SheetTitle className="text-base font-semibold font-mono text-muted-foreground truncate max-w-[300px]">
+      <SheetContent className="sm:max-w-xl font-sans flex flex-col h-full p-6 gap-5 overflow-y-auto bg-card border-l border-border/60">
+        <SheetHeader className="p-0 pb-4 border-b border-border/40 gap-1.5">
+          <div className="flex items-center justify-between pr-8">
+            <SheetTitle className="text-base font-bold font-mono text-foreground truncate max-w-[320px]">
               {payload.id}
             </SheetTitle>
           </div>
-          <SheetDescription className="text-xs">
+          <SheetDescription className="text-xs text-muted-foreground font-mono">
             Captured {new Date(payload.received_at).toLocaleString()}
           </SheetDescription>
         </SheetHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-4 bg-muted/60 shrink-0">
-            <TabsTrigger value="body">Body</TabsTrigger>
-            <TabsTrigger value="headers">Headers</TabsTrigger>
-            <TabsTrigger value="query">Params</TabsTrigger>
-            <TabsTrigger value="replay" className="text-primary hover:text-primary/80">Replay</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 gap-4">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/60 shrink-0 p-1 h-10 rounded-xl">
+            <TabsTrigger value="body" className="text-xs font-semibold rounded-lg">Body</TabsTrigger>
+            <TabsTrigger value="headers" className="text-xs font-semibold rounded-lg">Headers</TabsTrigger>
+            <TabsTrigger value="query" className="text-xs font-semibold rounded-lg">Params</TabsTrigger>
+            <TabsTrigger value="replay" className="text-xs font-semibold rounded-lg text-primary hover:text-primary/80">Replay</TabsTrigger>
           </TabsList>
 
           {/* Body inspector view */}
-          <TabsContent value="body" className="flex-1 overflow-y-auto mt-4 p-4 border rounded-xl bg-muted/20">
+          <TabsContent value="body" className="flex-1 overflow-y-auto mt-0 p-4 border border-border/60 rounded-xl bg-muted/20">
             {payload.parsed_body && Object.keys(payload.parsed_body).length > 0 ? (
               <JSONViewer data={payload.parsed_body} maxDepth={3} />
             ) : payload.raw_body ? (
@@ -110,7 +110,7 @@ export function PayloadInspector({
           </TabsContent>
 
           {/* Headers inspector view */}
-          <TabsContent value="headers" className="flex-1 overflow-y-auto mt-4 p-4 border rounded-xl bg-muted/20">
+          <TabsContent value="headers" className="flex-1 overflow-y-auto mt-0 p-4 border border-border/60 rounded-xl bg-muted/20">
             <div className="flex flex-col gap-2">
               {Object.entries(payload.headers || {}).map(([key, val]) => (
                 <div key={key} className="flex flex-col gap-1 border-b border-border/30 pb-2 last:border-0 font-mono text-xs">
@@ -122,7 +122,7 @@ export function PayloadInspector({
           </TabsContent>
 
           {/* Params inspector view */}
-          <TabsContent value="query" className="flex-1 overflow-y-auto mt-4 p-4 border rounded-xl bg-muted/20">
+          <TabsContent value="query" className="flex-1 overflow-y-auto mt-0 p-4 border border-border/60 rounded-xl bg-muted/20">
             {Object.keys(payload.query_params || {}).length === 0 ? (
               <div className="text-center text-xs text-muted-foreground py-8">
                 No query parameters attached
@@ -140,13 +140,13 @@ export function PayloadInspector({
           </TabsContent>
 
           {/* Custom Replay panel */}
-          <TabsContent value="replay" className="flex-1 flex flex-col gap-4 mt-4">
+          <TabsContent value="replay" className="flex-1 flex flex-col gap-4 mt-0">
             <div className="flex flex-col gap-2 flex-1 min-h-0">
               <span className="text-xs font-semibold text-muted-foreground">
                 Edit Request Body
               </span>
               <Textarea
-                className="font-mono text-xs flex-1 min-h-[250px] bg-muted/10"
+                className="font-mono text-xs flex-1 min-h-[250px] bg-muted/10 border-border/60 p-3"
                 value={customBody}
                 onChange={(e) => setCustomBody(e.target.value)}
                 disabled={isReplaying}
