@@ -77,6 +77,11 @@ export default function DashboardLayout({
         icon: Radio,
       },
       {
+        title: "Traffic Logs",
+        href: "/logs",
+        icon: Activity,
+      },
+      {
         title: "Settings",
         href: "/settings",
         icon: Settings,

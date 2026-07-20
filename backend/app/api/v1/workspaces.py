@@ -2,15 +2,15 @@
 API endpoints for workspaces: list, create.
 """
 
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlmodel import select, func
 
 from app.core.deps import SessionDep
 from app.core.auth_deps import get_current_user
 from app.models.webhook import User, ReceiverEndpoint, WebhookPayload, WebhookDelivery, SchemaDriftAlert, EndpointType
-from app.schemas.webhook import WorkspaceRead, WorkspaceCreate, WorkspaceStatsRead, HourlyTraffic
+from app.schemas.webhook import WorkspaceRead, WorkspaceCreate, WorkspaceStatsRead, HourlyTraffic, PaginatedResponse, WebhookPayloadRead
 from app.services import user as user_service
 
 router = APIRouter()
@@ -145,4 +145,53 @@ def get_workspace_stats(
         drift_alerts_count=drift_alerts_count,
         traffic_chart=traffic_chart
     )
+
+
+@router.get("/{workspace_id}/payloads", response_model=PaginatedResponse[WebhookPayloadRead])
+def list_workspace_payloads(
+    workspace_id: int,
+    session: SessionDep,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    endpoint_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+):
+    """List recent payloads across all endpoints in a workspace (or filtered by endpoint)."""
+    verify_workspace_membership(session, workspace_id, current_user.id)
+
+    endpoints_stmt = select(ReceiverEndpoint.id).where(ReceiverEndpoint.workspace_id == workspace_id)
+    endpoint_ids = [row for row in session.exec(endpoints_stmt).all()]
+
+    if not endpoint_ids:
+        return PaginatedResponse(items=[], total=0, page=page, page_size=page_size)
+
+    if endpoint_id:
+        if endpoint_id not in endpoint_ids:
+            raise HTTPException(status_code=404, detail="Endpoint not found in workspace")
+        target_ids = [endpoint_id]
+    else:
+        target_ids = endpoint_ids
+
+    offset = (page - 1) * page_size
+    where_clause = WebhookPayload.endpoint_id.in_(target_ids)
+
+    count_stmt = select(func.count()).select_from(WebhookPayload).where(where_clause)
+    total = session.exec(count_stmt).one()
+
+    stmt = (
+        select(WebhookPayload)
+        .where(where_clause)
+        .order_by(WebhookPayload.received_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    items = session.exec(stmt).all()
+
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
 

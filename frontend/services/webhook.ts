@@ -325,4 +325,26 @@ export function useWorkspaceStats(workspaceId?: string) {
   });
 }
 
+export function useWorkspacePayloads(
+  workspaceId?: string,
+  page: number = 1,
+  pageSize: number = 20,
+  endpointId?: string
+) {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    page_size: pageSize.toString(),
+  });
+  if (endpointId && endpointId !== "all") {
+    queryParams.append("endpoint_id", endpointId);
+  }
+
+  return useQuery<PaginatedResponse<WebhookPayload>>({
+    queryKey: ['workspace-payloads', workspaceId, page, pageSize, endpointId],
+    queryFn: () => api.get<PaginatedResponse<WebhookPayload>>(`/workspaces/${workspaceId}/payloads?${queryParams.toString()}`),
+    enabled: !!workspaceId,
+  });
+}
+
+
 
