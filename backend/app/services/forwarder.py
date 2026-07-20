@@ -9,6 +9,7 @@ import httpx
 from sqlmodel import Session
 
 from app.models.webhook import Destination, WebhookPayload, WebhookDelivery
+from app.services import endpoint as endpoint_service
 from app.services import webhook as webhook_service
 from app.core.database import engine
 
@@ -193,7 +194,7 @@ async def dispatch_payload_to_destinations(
     Triggers parallel forwarding for a payload to all active destinations of the endpoint.
     """
     with Session(engine) as db:
-        destinations = webhook_service.list_destinations(session=db, endpoint_id=endpoint_id)
+        destinations = endpoint_service.list_destinations(session=db, endpoint_id=endpoint_id)
         active_destinations = [d for d in destinations if d.is_active]
 
     if not active_destinations:

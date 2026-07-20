@@ -11,14 +11,14 @@ from app.core.deps import SessionDep
 from app.core.auth_deps import get_current_user
 from app.models.webhook import User, ReceiverEndpoint, WebhookPayload, WebhookDelivery, SchemaDriftAlert, EndpointType
 from app.schemas.webhook import WorkspaceRead, WorkspaceCreate, WorkspaceStatsRead, HourlyTraffic
-from app.services import webhook as webhook_service
+from app.services import user as user_service
 
 router = APIRouter()
 
 
 def verify_workspace_membership(session: SessionDep, workspace_id: int, user_id: int):
     """Raise 403 Forbidden if the user is not a member of the workspace."""
-    member = webhook_service.get_workspace_member(session=session, workspace_id=workspace_id, user_id=user_id)
+    member = user_service.get_workspace_member(session=session, workspace_id=workspace_id, user_id=user_id)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -32,7 +32,7 @@ def list_workspaces(
     current_user: User = Depends(get_current_user),
 ):
     """List workspaces for the current logged-in user."""
-    return webhook_service.get_workspaces_for_user(session=session, user_id=current_user.id)
+    return user_service.get_workspaces_for_user(session=session, user_id=current_user.id)
 
 
 @router.post("/", response_model=WorkspaceRead, status_code=201)
@@ -42,8 +42,8 @@ def create_workspace(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new workspace and add the logged-in user as Admin."""
-    workspace = webhook_service.create_workspace(session=session, name=data.name)
-    webhook_service.add_workspace_member(
+    workspace = user_service.create_workspace(session=session, name=data.name)
+    user_service.add_workspace_member(
         session=session,
         workspace_id=workspace.id,
         user_id=current_user.id,

@@ -8,7 +8,7 @@ from sqlmodel import SQLModel
 from app.core.deps import SessionDep
 from app.core.auth import hash_password, verify_password, create_access_token
 from app.core.auth_deps import get_current_user
-from app.services import webhook as webhook_service
+from app.services import user as user_service
 from app.models.webhook import User
 from app.schemas.webhook import UserCreate, UserRead, UserLogin
 
@@ -24,7 +24,7 @@ class TokenWithUser(SQLModel):
 @router.post("/register", response_model=TokenWithUser, status_code=201)
 def register(data: UserCreate, session: SessionDep):
     """Register a new user, create their personal workspace, and return a JWT access token."""
-    existing_user = webhook_service.get_user_by_email(session=session, email=data.email)
+    existing_user = user_service.get_user_by_email(session=session, email=data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,14 +35,14 @@ def register(data: UserCreate, session: SessionDep):
     hashed_pwd = hash_password(data.password)
 
     # Create the user in the database
-    user = webhook_service.create_user(session=session, email=data.email, hashed_password=hashed_pwd)
+    user = user_service.create_user(session=session, email=data.email, hashed_password=hashed_pwd)
 
     # Create a default workspace for the user
     workspace_name = f"{data.email.split('@')[0]}'s Workspace"
-    workspace = webhook_service.create_workspace(session=session, name=workspace_name)
+    workspace = user_service.create_workspace(session=session, name=workspace_name)
 
     # Assign user to the workspace as Admin
-    webhook_service.add_workspace_member(
+    user_service.add_workspace_member(
         session=session,
         workspace_id=workspace.id,
         user_id=user.id,
@@ -62,7 +62,7 @@ def register(data: UserCreate, session: SessionDep):
 @router.post("/login", response_model=TokenWithUser)
 def login(data: UserLogin, session: SessionDep):
     """Authenticate a user and return a JWT access token."""
-    user = webhook_service.get_user_by_email(session=session, email=data.email)
+    user = user_service.get_user_by_email(session=session, email=data.email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

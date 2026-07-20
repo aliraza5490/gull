@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { Loader2, ChevronDown } from "lucide-react"
+import { Loader2, ChevronDown, RefreshCw } from "lucide-react"
 
 import {
   Dialog,
@@ -126,7 +126,7 @@ export function CreateEndpointDialog({
               </span>
               <Input
                 id="slug"
-                className="pl-24 pr-16 font-mono text-xs"
+                className="pl-24 pr-10 font-mono text-xs"
                 placeholder="stripe-webhook"
                 value={slug}
                 onChange={(e) => {
@@ -139,15 +139,18 @@ export function CreateEndpointDialog({
               <Button
                 type="button"
                 variant="ghost"
-                className="absolute right-1 h-7 text-[10px] px-2 font-sans hover:bg-muted border border-border/20"
+                size="icon"
+                className="absolute right-1 h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/20"
                 onClick={() => {
                   const rand = "ep-" + Math.random().toString(36).substring(2, 10)
                   setSlug(rand)
                   isSlugModified.current = true
                 }}
                 disabled={createEndpointMutation.isPending}
+                title="Generate random slug"
+                aria-label="Generate random slug"
               >
-                Random
+                <RefreshCw className="h-3.5 w-3.5" />
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground leading-normal">

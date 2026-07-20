@@ -1,231 +1,15 @@
 """
-Webhook service – all DB operations for workspaces, endpoints, destinations,
-payloads, and deliveries live here.
+Webhook service – DB operations for payloads, deliveries, and schema drift alerts.
 """
 
-import secrets
-from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Tuple
 from sqlmodel import Session, select, func, or_, and_
 
 from app.models.webhook import (
-    User,
-    Workspace,
-    WorkspaceMember,
-    ReceiverEndpoint,
-    Destination,
     WebhookPayload,
     WebhookDelivery,
     SchemaDriftAlert,
-    SessionShare,
-    EndpointType,
 )
-from app.schemas.webhook import (
-    ReceiverEndpointCreate,
-    ReceiverEndpointUpdate,
-    DestinationCreate,
-    DestinationUpdate,
-)
-
-
-# ── User & Workspace Operations ───────────────────────────────
-def create_user(*, session: Session, email: str, hashed_password: str) -> User:
-    user = User(email=email, hashed_password=hashed_password)
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return user
-
-
-def get_user_by_email(*, session: Session, email: str) -> Optional[User]:
-    stmt = select(User).where(User.email == email)
-    return session.exec(stmt).first()
-
-
-def create_workspace(*, session: Session, name: str) -> Workspace:
-    workspace = Workspace(name=name)
-    session.add(workspace)
-    session.commit()
-    session.refresh(workspace)
-    return workspace
-
-
-def get_workspace(*, session: Session, workspace_id: int) -> Optional[Workspace]:
-    return session.get(Workspace, workspace_id)
-
-
-def add_workspace_member(
-    *, session: Session, workspace_id: int, user_id: int, role: str
-) -> WorkspaceMember:
-    member = WorkspaceMember(workspace_id=workspace_id, user_id=user_id, role=role)
-    session.add(member)
-    session.commit()
-    session.refresh(member)
-    return member
-
-
-def get_workspace_member(
-    *, session: Session, workspace_id: int, user_id: int
-) -> Optional[WorkspaceMember]:
-    stmt = select(WorkspaceMember).where(
-        WorkspaceMember.workspace_id == workspace_id,
-        WorkspaceMember.user_id == user_id,
-    )
-    return session.exec(stmt).first()
-
-
-def get_workspaces_for_user(*, session: Session, user_id: int) -> List[Workspace]:
-    stmt = (
-        select(Workspace)
-        .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
-        .where(WorkspaceMember.user_id == user_id)
-    )
-    return list(session.exec(stmt).all())
-
-
-# ── Receiver Endpoint Operations ──────────────────────────────
-def create_endpoint(
-    *, session: Session, workspace_id: int, data: ReceiverEndpointCreate
-) -> ReceiverEndpoint:
-    expires_at = data.expires_at
-    if data.type == EndpointType.TEMPORARY and not expires_at:
-        # Default temporary endpoint to expire in 24 hours
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-
-    slug = data.slug
-    if not slug:
-        slug = f"ep-{secrets.token_hex(4)}"
-        while session.exec(select(ReceiverEndpoint).where(ReceiverEndpoint.slug == slug)).first():
-            slug = f"ep-{secrets.token_hex(4)}"
-
-    endpoint = ReceiverEndpoint(
-        workspace_id=workspace_id,
-        name=data.name,
-        slug=slug,
-        type=data.type,
-        secret=data.secret,
-        is_active=data.is_active,
-        expires_at=expires_at,
-    )
-    session.add(endpoint)
-    session.commit()
-    session.refresh(endpoint)
-    return endpoint
-
-
-def get_endpoint(*, session: Session, endpoint_id: int) -> Optional[ReceiverEndpoint]:
-    return session.get(ReceiverEndpoint, endpoint_id)
-
-
-def get_endpoint_by_slug(*, session: Session, slug: str) -> Optional[ReceiverEndpoint]:
-    stmt = select(ReceiverEndpoint).where(ReceiverEndpoint.slug == slug)
-    endpoint = session.exec(stmt).first()
-    if endpoint and endpoint.expires_at and endpoint.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-        # Handle expired temporary endpoint: mark inactive or delete
-        endpoint.is_active = False
-        session.add(endpoint)
-        session.commit()
-        session.refresh(endpoint)
-        return None
-    return endpoint
-
-
-def list_endpoints(
-    *,
-    session: Session,
-    workspace_id: int,
-    page: int = 1,
-    page_size: int = 20,
-) -> Tuple[List[ReceiverEndpoint], int]:
-    offset = (page - 1) * page_size
-    # Clean up expired temporary endpoints first
-    now = datetime.now(timezone.utc)
-    
-    count_stmt = select(func.count()).select_from(ReceiverEndpoint).where(
-        ReceiverEndpoint.workspace_id == workspace_id
-    )
-    total = session.exec(count_stmt).one()
-
-    stmt = (
-        select(ReceiverEndpoint)
-        .where(ReceiverEndpoint.workspace_id == workspace_id)
-        .offset(offset)
-        .limit(page_size)
-        .order_by(ReceiverEndpoint.created_at.desc())
-    )
-    items = list(session.exec(stmt).all())
-    return items, total
-
-
-def update_endpoint(
-    *,
-    session: Session,
-    db_endpoint: ReceiverEndpoint,
-    data: ReceiverEndpointUpdate,
-) -> ReceiverEndpoint:
-    update_data = data.model_dump(exclude_unset=True)
-    db_endpoint.sqlmodel_update(update_data)
-    db_endpoint.updated_at = datetime.now(timezone.utc)
-    session.add(db_endpoint)
-    session.commit()
-    session.refresh(db_endpoint)
-    return db_endpoint
-
-
-def delete_endpoint(*, session: Session, db_endpoint: ReceiverEndpoint) -> None:
-    session.delete(db_endpoint)
-    session.commit()
-
-
-# ── Destination Operations ────────────────────────────────────
-def create_destination(
-    *, session: Session, endpoint_id: int, data: DestinationCreate
-) -> Destination:
-    destination = Destination(
-        endpoint_id=endpoint_id,
-        name=data.name,
-        url=data.url,
-        method=data.method,
-        timeout=data.timeout,
-        is_active=data.is_active,
-        auth_type=data.auth_type,
-        auth_config=data.auth_config,
-        headers_to_inject=data.headers_to_inject,
-        headers_to_strip=data.headers_to_strip,
-        payload_transform_template=data.payload_transform_template,
-    )
-    session.add(destination)
-    session.commit()
-    session.refresh(destination)
-    return destination
-
-
-def get_destination(*, session: Session, destination_id: int) -> Optional[Destination]:
-    return session.get(Destination, destination_id)
-
-
-def list_destinations(*, session: Session, endpoint_id: int) -> List[Destination]:
-    stmt = select(Destination).where(Destination.endpoint_id == endpoint_id)
-    return list(session.exec(stmt).all())
-
-
-def update_destination(
-    *,
-    session: Session,
-    db_destination: Destination,
-    data: DestinationUpdate,
-) -> Destination:
-    update_data = data.model_dump(exclude_unset=True)
-    db_destination.sqlmodel_update(update_data)
-    session.add(db_destination)
-    session.commit()
-    session.refresh(db_destination)
-    return db_destination
-
-
-def delete_destination(*, session: Session, db_destination: Destination) -> None:
-    session.delete(db_destination)
-    session.commit()
 
 
 # ── Webhook Payload Operations ────────────────────────────────
@@ -272,13 +56,13 @@ def list_payloads(
     search_query: Optional[str] = None,
 ) -> Tuple[List[WebhookPayload], int]:
     offset = (page - 1) * page_size
-    
+
     # We query payloads for the endpoint
     conditions = [WebhookPayload.endpoint_id == endpoint_id]
-    
+
     if method:
         conditions.append(WebhookPayload.method == method.upper())
-        
+
     if search_query:
         search_pattern = f"%{search_query}%"
         conditions.append(
@@ -287,7 +71,7 @@ def list_payloads(
                 WebhookPayload.content_type.like(search_pattern),
             )
         )
-        
+
     if success is not None:
         # Check if deliveries succeed/fail
         # Join with WebhookDelivery to filter
@@ -311,7 +95,7 @@ def list_payloads(
         .order_by(WebhookPayload.received_at.desc())
     )
     items = list(session.exec(stmt).all())
-    
+
     return items, total
 
 
@@ -369,27 +153,3 @@ def create_drift_alert(
 def list_drift_alerts(*, session: Session, endpoint_id: int) -> List[SchemaDriftAlert]:
     stmt = select(SchemaDriftAlert).where(SchemaDriftAlert.endpoint_id == endpoint_id).order_by(SchemaDriftAlert.created_at.desc())
     return list(session.exec(stmt).all())
-
-
-# ── Session Sharing Operations ────────────────────────────────
-def create_share(
-    *, session: Session, endpoint_id: int, expires_in_seconds: int = 3600
-) -> SessionShare:
-    token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
-    share = SessionShare(endpoint_id=endpoint_id, token=token, expires_at=expires_at)
-    session.add(share)
-    session.commit()
-    session.refresh(share)
-    return share
-
-
-def get_share_by_token(*, session: Session, token: str) -> Optional[SessionShare]:
-    stmt = select(SessionShare).where(SessionShare.token == token)
-    share = session.exec(stmt).first()
-    if share and share.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-        # Cleanup expired share link
-        session.delete(share)
-        session.commit()
-        return None
-    return share

@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from app.core.deps import SessionDep
 from app.core.database import get_session
+from app.services import endpoint as endpoint_service
 from app.services import webhook as webhook_service
 from app.services.streaming import manager as stream_manager
 from app.services.drift import detect_schema_drift
@@ -60,7 +61,7 @@ async def handle_incoming_webhook(
 ) -> dict:
     """Central processing logic for all incoming HTTP webhooks."""
     # 1. Fetch Endpoint
-    endpoint = webhook_service.get_endpoint_by_slug(session=session, slug=endpoint_slug)
+    endpoint = endpoint_service.get_endpoint_by_slug(session=session, slug=endpoint_slug)
     if not endpoint:
         raise HTTPException(status_code=404, detail="Webhook Endpoint not found or expired")
 

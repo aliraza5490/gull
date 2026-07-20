@@ -19,6 +19,8 @@ from app.schemas.webhook import (
     SessionShareCreate,
     SessionShareRead,
 )
+from app.services import user as user_service
+from app.services import endpoint as endpoint_service
 from app.services import webhook as webhook_service
 from app.services.forwarder import forward_to_destination, dispatch_payload_to_destinations
 
@@ -27,12 +29,12 @@ router = APIRouter()
 
 def get_default_workspace_for_user(session: SessionDep, user_id: int) -> int:
     """Helper to auto-provision a default workspace for a user if none exists."""
-    workspaces = webhook_service.get_workspaces_for_user(session=session, user_id=user_id)
+    workspaces = user_service.get_workspaces_for_user(session=session, user_id=user_id)
     if not workspaces:
         # Create a new workspace
-        workspace = webhook_service.create_workspace(session=session, name="Default Workspace")
+        workspace = user_service.create_workspace(session=session, name="Default Workspace")
         # Add workspace member mapping
-        webhook_service.add_workspace_member(
+        user_service.add_workspace_member(
             session=session,
             workspace_id=workspace.id,
             user_id=user_id,
@@ -44,7 +46,7 @@ def get_default_workspace_for_user(session: SessionDep, user_id: int) -> int:
 
 def verify_workspace_membership(session: SessionDep, workspace_id: int, user_id: int):
     """Raise 403 Forbidden if the user is not a member of the workspace."""
-    member = webhook_service.get_workspace_member(session=session, workspace_id=workspace_id, user_id=user_id)
+    member = user_service.get_workspace_member(session=session, workspace_id=workspace_id, user_id=user_id)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -54,7 +56,7 @@ def verify_workspace_membership(session: SessionDep, workspace_id: int, user_id:
 
 def get_endpoint_with_auth(session: SessionDep, endpoint_id: int, user_id: int):
     """Retrieve an endpoint and verify the user is authorized to access it."""
-    endpoint = webhook_service.get_endpoint(session=session, endpoint_id=endpoint_id)
+    endpoint = endpoint_service.get_endpoint(session=session, endpoint_id=endpoint_id)
     if not endpoint:
         raise HTTPException(status_code=404, detail="Webhook Endpoint not found")
     verify_workspace_membership(session, endpoint.workspace_id, user_id)
@@ -73,7 +75,7 @@ def create_webhook(
 ):
     w_id = workspace_id or get_default_workspace_for_user(session, current_user.id)
     verify_workspace_membership(session, w_id, current_user.id)
-    return webhook_service.create_endpoint(session=session, workspace_id=w_id, data=data)
+    return endpoint_service.create_endpoint(session=session, workspace_id=w_id, data=data)
 
 
 @router.get("/", response_model=PaginatedResponse[ReceiverEndpointRead])
@@ -87,7 +89,7 @@ def list_webhooks(
 ):
     w_id = workspace_id or get_default_workspace_for_user(session, current_user.id)
     verify_workspace_membership(session, w_id, current_user.id)
-    items, total = webhook_service.list_endpoints(
+    items, total = endpoint_service.list_endpoints(
         session=session, workspace_id=w_id, page=page, page_size=page_size
     )
     return PaginatedResponse(
@@ -117,7 +119,7 @@ def update_webhook(
     current_user: User = Depends(get_current_user),
 ):
     endpoint = get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    return webhook_service.update_endpoint(
+    return endpoint_service.update_endpoint(
         session=session, db_endpoint=endpoint, data=data
     )
 
@@ -130,7 +132,7 @@ def delete_webhook(
     current_user: User = Depends(get_current_user),
 ):
     endpoint = get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    webhook_service.delete_endpoint(session=session, db_endpoint=endpoint)
+    endpoint_service.delete_endpoint(session=session, db_endpoint=endpoint)
 
 
 # ── Destination Management ────────────────────────────────────
@@ -144,7 +146,7 @@ def create_destination(
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    return webhook_service.create_destination(session=session, endpoint_id=endpoint_id, data=data)
+    return endpoint_service.create_destination(session=session, endpoint_id=endpoint_id, data=data)
 
 
 @router.get("/{endpoint_id}/destinations", response_model=List[DestinationRead])
@@ -155,7 +157,7 @@ def list_destinations(
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    return webhook_service.list_destinations(session=session, endpoint_id=endpoint_id)
+    return endpoint_service.list_destinations(session=session, endpoint_id=endpoint_id)
 
 
 @router.patch("/{endpoint_id}/destinations/{destination_id}", response_model=DestinationRead)
@@ -168,10 +170,10 @@ def update_destination(
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    dest = webhook_service.get_destination(session=session, destination_id=destination_id)
+    dest = endpoint_service.get_destination(session=session, destination_id=destination_id)
     if not dest or dest.endpoint_id != endpoint_id:
         raise HTTPException(status_code=404, detail="Destination not found")
-    return webhook_service.update_destination(session=session, db_destination=dest, data=data)
+    return endpoint_service.update_destination(session=session, db_destination=dest, data=data)
 
 
 @router.delete("/{endpoint_id}/destinations/{destination_id}", status_code=204)
@@ -183,10 +185,10 @@ def delete_destination(
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    dest = webhook_service.get_destination(session=session, destination_id=destination_id)
+    dest = endpoint_service.get_destination(session=session, destination_id=destination_id)
     if not dest or dest.endpoint_id != endpoint_id:
         raise HTTPException(status_code=404, detail="Destination not found")
-    webhook_service.delete_destination(session=session, db_destination=dest)
+    endpoint_service.delete_destination(session=session, db_destination=dest)
 
 
 # ── Webhook Payloads & Inspection ──────────────────────────────
@@ -333,18 +335,18 @@ def create_share_link(
     current_user: User = Depends(get_current_user),
 ):
     get_endpoint_with_auth(session, endpoint_id, current_user.id)
-    return webhook_service.create_share(session=session, endpoint_id=endpoint_id, expires_in_seconds=data.expires_in_seconds)
+    return endpoint_service.create_share(session=session, endpoint_id=endpoint_id, expires_in_seconds=data.expires_in_seconds)
 
 
 # ── Public Session Share Inspection ───────────────────────────
 
 @router.get("/shares/{token}", response_model=ReceiverEndpointRead)
 def get_shared_endpoint(*, session: SessionDep, token: str):
-    share = webhook_service.get_share_by_token(session=session, token=token)
+    share = endpoint_service.get_share_by_token(session=session, token=token)
     if not share:
         raise HTTPException(status_code=404, detail="Invalid or expired share link")
 
-    endpoint = webhook_service.get_endpoint(session=session, endpoint_id=share.endpoint_id)
+    endpoint = endpoint_service.get_endpoint(session=session, endpoint_id=share.endpoint_id)
     if not endpoint:
         raise HTTPException(status_code=404, detail="Shared endpoint not found")
 
@@ -361,7 +363,7 @@ def list_shared_payloads(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
-    share = webhook_service.get_share_by_token(session=session, token=token)
+    share = endpoint_service.get_share_by_token(session=session, token=token)
     if not share:
         raise HTTPException(status_code=404, detail="Invalid or expired share link")
 
@@ -386,7 +388,7 @@ def list_shared_deliveries(
     token: str,
     payload_id: int,
 ):
-    share = webhook_service.get_share_by_token(session=session, token=token)
+    share = endpoint_service.get_share_by_token(session=session, token=token)
     if not share:
         raise HTTPException(status_code=404, detail="Invalid or expired share link")
 
