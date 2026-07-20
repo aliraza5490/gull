@@ -116,8 +116,8 @@ export default function DashboardOverviewPage() {
     } satisfies ChartConfig
 
     return (
-      <div className="w-full h-[200px] mt-4">
-        <ChartContainer config={chartConfig} className="w-full h-full min-h-[200px]">
+      <div className="w-full h-[220px] mt-4">
+        <ChartContainer config={chartConfig} className="w-full h-full min-h-[220px]">
           <AreaChart
             accessibilityLayer
             data={chartData}
@@ -125,7 +125,7 @@ export default function DashboardOverviewPage() {
               left: -20,
               right: 12,
               top: 10,
-              bottom: 10,
+              bottom: 30,
             }}
           >
             <defs>
@@ -147,7 +147,7 @@ export default function DashboardOverviewPage() {
               dataKey="hour"
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
+              tickMargin={22}
             />
             <YAxis
               tickLine={false}

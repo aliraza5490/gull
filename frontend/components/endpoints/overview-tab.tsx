@@ -319,9 +319,9 @@ export function OverviewTab({
           <CardContent className="pt-4">
             <div className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activityData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <BarChart data={activityData} margin={{ top: 10, right: 10, left: -25, bottom: 18 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                  <XAxis dataKey="time" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                  <XAxis dataKey="time" tickLine={false} axisLine={false} tickMargin={18} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                   <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                   <Tooltip
                     contentStyle={{
